@@ -11,7 +11,6 @@
         .section-title { border-left: 5px solid #06C755; padding-left: 10px; margin: 20px 0 15px 0; font-weight: bold; }
         .item-row { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 10px; border: 1px solid #e9ecef; }
         .btn-line { background-color: #06C755; color: white; border: none; font-weight: bold; }
-        .btn-line:hover { background-color: #05a346; color: white; }
         .btn-outline-line { border: 1px solid #06C755; color: #06C755; background: white; font-weight: bold; }
         .readonly-field { background-color: #e9ecef !important; }
         .d-none { display: none !important; }
@@ -46,7 +45,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label small text-muted">訂購人 (LINE)</label>
-                <input type="text" class="form-control readonly-field" id="ordererName" readonly placeholder="載入中...">
+                <input type="text" class="form-control readonly-field" id="ordererName" readonly placeholder="系統載入中...">
             </div>
             <div class="mb-3">
                 <label class="form-label">預計出貨日期</label>
@@ -86,35 +85,48 @@
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-    // --- 參數設定 ---
+    // --- ⚠️ 請務必確認這兩個參數 ---
     const LIFF_ID = "2008894056-few4uzMm"; 
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwRDNZrsmN2yBEi35KmkpcVjN88Dtom5X7FRVhCffFeeXCWbRiDylRmbqMUV3CqX9Uz-g/exec"; 
+    // ----------------------------
 
     let productOptions = [];
     let currentPayload = null;
-    let userProfile = null;
+    let userProfile = { displayName: "未知用戶", userId: "" };
 
-    // 1. 初始化
+    // 初始化流程
     window.onload = async function() {
-        document.getElementById('orderDate').value = new Date().toISOString().split('T')[0];
         try {
+            // 1. 先解決日期顯示 (最快，不依賴任何外部)
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('orderDate').value = today;
+            document.getElementById('shipDate').setAttribute('min', today);
+
+            // 2. 初始化 LIFF
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) {
                 liff.login();
-            } else {
-                userProfile = await liff.getProfile();
-                document.getElementById('ordererName').value = userProfile.displayName;
+                return;
             }
+            userProfile = await liff.getProfile();
+            document.getElementById('ordererName').value = userProfile.displayName;
 
+            // 3. 抓取品項
             const resp = await fetch(GAS_URL);
+            if (!resp.ok) throw new Error("GAS 回應錯誤");
             productOptions = await resp.json();
-            addItemRow();
+            
+            if (productOptions.length > 0) {
+                addItemRow();
+            } else {
+                alert("品項清單是空的，請檢查試算表。");
+            }
         } catch (err) {
+            alert("載入過程中斷：" + err.message);
             console.error(err);
         }
     };
 
-    // 2. 品項增減
     function addItemRow() {
         const container = document.getElementById('itemList');
         const rowId = 'row_' + Date.now();
@@ -139,27 +151,25 @@
     }
 
     function removeRow(id) {
-        if (document.querySelectorAll('.item-row').length > 1) document.getElementById(id).remove();
+        if (document.querySelectorAll('.item-row').length > 1) {
+            document.getElementById(id).remove();
+        }
     }
 
-    // 3. 切換步驟邏輯 (最重要)
     function switchStep(from, to) {
         document.getElementById('step' + from).classList.add('d-none');
         document.getElementById('step' + to).classList.remove('d-none');
         window.scrollTo(0, 0);
     }
 
-    // 4. 第一階段：點擊預覽
     document.getElementById('orderForm').addEventListener('submit', function(e) {
-        e.preventDefault(); // 阻止表單重整
-        
+        e.preventDefault();
         try {
             const items = [];
             document.querySelectorAll('.item-row').forEach(row => {
-                items.push({
-                    productName: row.querySelector('.product-select').value,
-                    count: row.querySelector('.product-count').value
-                });
+                const p = row.querySelector('.product-select').value;
+                const c = row.querySelector('.product-count').value;
+                if (p) items.push({ productName: p, count: c });
             });
 
             currentPayload = {
@@ -168,34 +178,35 @@
                 ordererName: document.getElementById('ordererName').value,
                 shipDate: document.getElementById('shipDate').value,
                 items: items,
-                userId: userProfile ? userProfile.userId : ""
+                userId: userProfile.userId
             };
 
-            // 渲染摘要內容
             renderSummary('confirmDetail');
-            // 切換到第二步
             switchStep(1, 2);
         } catch (err) {
-            alert("預覽發生錯誤：" + err.message);
+            alert("處理預覽失敗：" + err.message);
         }
     });
 
     function renderSummary(elementId) {
-        let itemsHtml = currentPayload.items.map(i => `<div class="confirm-item d-flex justify-content-between"><span>${i.productName}</span><span class="fw-bold">x ${i.count}</span></div>`).join('');
+        let itemsHtml = currentPayload.items.map(i => `
+            <div class="confirm-item d-flex justify-content-between">
+                <span>${i.productName}</span>
+                <span class="fw-bold">x ${i.count}</span>
+            </div>`).join('');
+            
         document.getElementById(elementId).innerHTML = `
             <div class="mb-2 small"><b>店家：</b>${currentPayload.shopName}</div>
             <div class="mb-2 small"><b>出貨日：</b>${currentPayload.shipDate}</div>
             <div class="mb-2 small"><b>訂購人：</b>${currentPayload.ordererName}</div>
-            <div class="mt-3">${itemsHtml}</div>
+            <div class="mt-3 border-top pt-2">${itemsHtml}</div>
         `;
     }
 
-    // 5. 第二階段：確認送出
     function handleFinalSubmit() {
         const overlay = document.getElementById('loadingOverlay');
         overlay.style.display = 'flex';
 
-        // 發送資料 (不等待回應)
         fetch(GAS_URL, {
             method: "POST",
             mode: "no-cors",
@@ -203,18 +214,16 @@
             body: JSON.stringify(currentPayload)
         });
 
-        // 延遲一段時間顯示成功畫面
         setTimeout(() => {
             overlay.style.display = 'none';
             renderSummary('resultSummary');
             switchStep(2, 3);
-
-            // 嘗試傳送訊息
+            
             if (liff.isInClient()) {
                 liff.sendMessages([{
                     type: 'text',
                     text: `✅ 泉威訂單已成功送出！\n店家：${currentPayload.shopName}\n出貨：${currentPayload.shipDate}`
-                }]);
+                }]).catch(e => console.log("訊息傳送失敗"));
             }
         }, 800);
     }
