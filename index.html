@@ -15,10 +15,7 @@
         .btn-outline-line { border: 1px solid #06C755; color: #06C755; background: white; font-weight: bold; }
         .readonly-field { background-color: #e9ecef !important; }
         .d-none { display: none !important; }
-        
-        /* 必填星號樣式 */
         .req { color: #dc3545; margin-left: 3px; font-weight: bold; }
-        
         .confirm-box { background: #fdfdfd; border: 1px solid #eee; border-radius: 12px; padding: 20px; }
         .confirm-item { font-size: 0.95rem; border-bottom: 1px dashed #ddd; padding: 8px 0; }
         #loadingOverlay { 
@@ -98,11 +95,8 @@
     let userProfile = null;
 
     window.onload = async function() {
-        // 設定下單日期為今天 (唯讀)
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('orderDate').value = today;
-        
-        // 限制出貨日期最早只能選今天 (但不預設數值)
         document.getElementById('shipDate').setAttribute('min', today);
 
         try {
@@ -157,7 +151,6 @@
 
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        
         try {
             const items = [];
             document.querySelectorAll('.item-row').forEach(row => {
@@ -210,9 +203,13 @@
             switchStep(2, 3);
 
             if (liff.isInClient()) {
+                // --- 組合發送到 LINE 的訊息內容 ---
+                const itemsMsg = currentPayload.items.map(i => `・${i.name} x ${i.count}`).join('\n');
+                const fullMsg = `我已下單如下：\n--------------------\n下單日期：${currentPayload.orderDate}\n店家名稱：${currentPayload.shopName}\n訂購人：${currentPayload.ordererName}\n預計出貨日：${currentPayload.shipDate}\n--------------------\n訂購明細：\n${itemsMsg}`;
+
                 liff.sendMessages([{
                     type: 'text',
-                    text: `✅ 泉威訂單已成功送出！\n店家：${currentPayload.shopName}\n出貨：${currentPayload.shipDate}`
+                    text: fullMsg
                 }]).catch(e => console.log("訊息傳送跳過"));
             }
         }, 800);
