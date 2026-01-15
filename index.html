@@ -115,13 +115,14 @@
         if (document.querySelectorAll('.item-row').length > 1) document.getElementById(id).remove();
     }
 
-document.getElementById('orderForm').addEventListener('submit', async (e) => {
+document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
         // 1. 顯示讀取畫面
         const overlay = document.getElementById('loadingOverlay');
         overlay.style.display = 'flex';
         
+        // 整理資料
         const items = [];
         document.querySelectorAll('.item-row').forEach(row => {
             items.push({
@@ -130,50 +131,53 @@ document.getElementById('orderForm').addEventListener('submit', async (e) => {
             });
         });
 
-        const profile = await liff.getProfile();
-        const payload = {
-            orderDate: document.getElementById('orderDate').value,
-            shopName: document.getElementById('shopName').value,
-            ordererName: document.getElementById('ordererName').value,
-            shipDate: document.getElementById('shipDate').value,
-            items: items,
-            userId: profile.userId
-        };
+        // 取得資料並發送
+        liff.getProfile().then(profile => {
+            const payload = {
+                orderDate: document.getElementById('orderDate').value,
+                shopName: document.getElementById('shopName').value,
+                ordererName: document.getElementById('ordererName').value,
+                shipDate: document.getElementById('shipDate').value,
+                items: items,
+                userId: profile.userId
+            };
 
-        try {
-            // 2. 使用 no-cors 模式發送 (解決 GAS 回傳導致的掛起問題)
-            // 因為您已經確認資料能進試算表，我們不需要強求讀取回傳內容
-            await fetch(GAS_URL, {
+            // --- 核心改動：不再使用 await fetch ---
+            // 採用「發射後不管」策略
+            fetch(GAS_URL, {
                 method: "POST",
-                mode: "no-cors", 
+                mode: "no-cors",
                 headers: { "Content-Type": "text/plain" },
                 body: JSON.stringify(payload)
             });
 
-            // 3. 隱藏讀取畫面 (這一步最重要，確保不會一直轉圈)
-            overlay.style.display = 'none';
-
-            // 4. 嘗試傳送 LINE 訊息並關閉視窗
-            // 加一個 try catch 包住訊息，防止訊息功能失效導致視窗關不掉
-            try {
-                if (liff.isInClient()) {
-                    await liff.sendMessages([{
+            // 資料發出後，不等回應，直接進行後續動作
+            setTimeout(() => {
+                overlay.style.display = 'none'; // 隱藏轉圈圈
+                
+                // 嘗試發送 LINE 訊息 (失敗也沒關係，不影響關窗)
+                try {
+                    liff.sendMessages([{
                         type: 'text',
-                        text: `📦 泉威訂單已送出！\n店家：${payload.shopName}\n出貨：${payload.shipDate}`
-                    }]);
+                        text: `✅ 泉威訂單已送出！\n店家：${payload.shopName}\n出貨：${payload.shipDate}`
+                    }]).then(() => {
+                        liff.closeWindow(); // 傳完訊息後關窗
+                    }).catch(() => {
+                        liff.closeWindow(); // 訊息傳失敗也關窗
+                    });
+                } catch (err) {
+                    liff.closeWindow(); // 噴錯也強行關窗
                 }
-            } catch (msgErr) {
-                console.log("無法傳送訊息，但訂單已處理", msgErr);
-            }
+                
+                // 保險：如果 2 秒後視窗還沒關，強制關閉
+                setTimeout(() => liff.closeWindow(), 1500);
+                
+            }, 500); // 給瀏覽器 0.5 秒時間把封包發出去
 
-            // 5. 無論訊息有無成功，都關閉視窗
-            liff.closeWindow();
-
-        } catch (err) {
-            console.error("提交過程發生錯誤:", err);
-            alert("系統忙碌中，請確認試算表是否有增加資料。");
+        }).catch(err => {
+            alert("取得個人資料失敗，請重新開啟");
             overlay.style.display = 'none';
-        }
+        });
     });
 </script>
 </body>
