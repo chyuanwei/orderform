@@ -115,9 +115,12 @@
         if (document.querySelectorAll('.item-row').length > 1) document.getElementById(id).remove();
     }
 
-    document.getElementById('orderForm').addEventListener('submit', async (e) => {
+document.getElementById('orderForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        document.getElementById('loadingOverlay').style.display = 'flex';
+        
+        // 1. 顯示讀取畫面
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = 'flex';
         
         const items = [];
         document.querySelectorAll('.item-row').forEach(row => {
@@ -138,14 +141,38 @@
         };
 
         try {
+            // 2. 使用 no-cors 模式發送 (解決 GAS 回傳導致的掛起問題)
+            // 因為您已經確認資料能進試算表，我們不需要強求讀取回傳內容
             await fetch(GAS_URL, {
                 method: "POST",
+                mode: "no-cors", 
+                headers: { "Content-Type": "text/plain" },
                 body: JSON.stringify(payload)
             });
-            liff.sendMessages([{ type: 'text', text: '✅ 訂單已成功送出！' }]).then(() => liff.closeWindow());
+
+            // 3. 隱藏讀取畫面 (這一步最重要，確保不會一直轉圈)
+            overlay.style.display = 'none';
+
+            // 4. 嘗試傳送 LINE 訊息並關閉視窗
+            // 加一個 try catch 包住訊息，防止訊息功能失效導致視窗關不掉
+            try {
+                if (liff.isInClient()) {
+                    await liff.sendMessages([{
+                        type: 'text',
+                        text: `📦 泉威訂單已送出！\n店家：${payload.shopName}\n出貨：${payload.shipDate}`
+                    }]);
+                }
+            } catch (msgErr) {
+                console.log("無法傳送訊息，但訂單已處理", msgErr);
+            }
+
+            // 5. 無論訊息有無成功，都關閉視窗
+            liff.closeWindow();
+
         } catch (err) {
-            alert("送出失敗: " + err);
-            document.getElementById('loadingOverlay').style.display = 'none';
+            console.error("提交過程發生錯誤:", err);
+            alert("系統忙碌中，請確認試算表是否有增加資料。");
+            overlay.style.display = 'none';
         }
     });
 </script>
