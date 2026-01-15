@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>泉威食品 - 訂單系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; padding: 15px; font-family: "Microsoft JhengHei", sans-serif; }
+        .order-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .section-title { border-left: 5px solid #06C755; padding-left: 10px; margin: 20px 0 15px 0; font-weight: bold; color: #333; }
+        .item-row { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 10px; position: relative; border: 1px solid #e9ecef; }
+        .btn-line { background-color: #06C755; color: white; border: none; font-weight: bold; }
+        .btn-line:hover { background-color: #05a346; color: white; }
+        .btn-add { border: 2px dashed #06C755; color: #06C755; background: white; width: 100%; margin-top: 10px; font-weight: bold; }
+        .btn-add:hover { background: #f0fff4; color: #05a346; }
+        .readonly-field { background-color: #e9ecef !important; opacity: 1; color: #6c757d; }
+        #loadingOverlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
+        }
+    </style>
+    <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+    <script>
+      // 初始化 vConsole，這會在手機右下角出現一個綠色按鈕「vConsole」
+      var vConsole = new window.VConsole();
+    </script>
+</head>
+<body>
+
+<div id="loadingOverlay">
+    <div class="spinner-border text-success" role="status"></div>
+    <p class="mt-2">訂單處理中...</p>
+</div>
+
+<div class="container order-container">
+    <h3 class="text-center mb-4" style="color: #06C755;">泉威食品訂購單</h3>
+    
+    <form id="orderForm">
+        <div class="section-title">基本資料</div>
+        
+        <div class="mb-3">
+            <label class="form-label small text-muted">下單日期 (今天)</label>
+            <input type="date" class="form-control readonly-field" id="orderDate" readonly>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">店家名稱</label>
+            <input type="text" class="form-control" id="shopName" required placeholder="請輸入您的店名">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label small text-muted">訂購人 (LINE 帳號)</label>
+            <input type="text" class="form-control readonly-field" id="ordererName" readonly placeholder="讀取中...">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">預計出貨日期</label>
+            <input type="date" class="form-control" id="shipDate" required>
+        </div>
+
+        <div class="section-title d-flex justify-content-between align-items-center">
+            訂購項目
+        </div>
+
+        <div id="itemList">
+            </div>
+
+        <button type="button" class="btn btn-add" onclick="addItemRow()">+ 增加一筆品項</button>
+
+        <hr class="my-4">
+        <button type="submit" class="btn btn-line w-100 py-3 mb-2" id="submitBtn">確認送出訂單</button>
+    </form>
+</div>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<script>
+    let productOptions = []; // 儲存從 B 欄抓回來的品項
+
+    // 1. 頁面初始化
+// 加強版初始化與除錯邏輯
+// 請替換 index.html 中的 init 部分測試
+window.onload = async function() {
+        const nameField = document.getElementById('ordererName');
+        try {
+            document.getElementById('orderDate').value = new Date().toISOString().split('T')[0];
+            
+            // 偵測 SDK 是否載入
+            if (typeof liff === 'undefined') {
+                alert("致命錯誤：網頁未成功載入 LINE SDK 腳本，請檢查網路。");
+                return;
+            }
+
+            nameField.value = "正在嘗試握手...";
+            
+            // 執行初始化
+            await liff.init({ liffId: "2008894056-few4uzMm" })
+                .then(() => {
+                    nameField.value = "初始化成功，檢查登入...";
+                    if (!liff.isLoggedIn()) {
+                        liff.login();
+                    } else {
+                        liff.getProfile().then(profile => {
+                            nameField.value = profile.displayName;
+                        });
+                    }
+                })
+                .catch((err) => {
+                    // 這裡強迫顯示錯誤訊息
+                    const errorMsg = "LIFF 錯誤代碼: " + err.code + "\n訊息: " + err.message;
+                    alert(errorMsg);
+                    nameField.value = "初始化失敗";
+                });
+
+            // 抓取品項
+            google.script.run.withSuccessHandler(options => {
+                productOptions = options;
+                if (productOptions.length > 0) addItemRow();
+            }).getProductList();
+
+        } catch (err) {
+            alert("腳本崩潰：" + err.message + "\n" + err.stack);
+        }
+    };
+
+    // 2. 動態增加品項列
+    function addItemRow() {
+        const container = document.getElementById('itemList');
+        const rowId = 'row_' + Date.now();
+        
+        const rowHtml = `
+            <div class="item-row" id="${rowId}">
+                <div class="row g-2">
+                    <div class="col-7">
+                        <label class="small text-muted">選擇品項</label>
+                        <select class="form-select product-select" required>
+                            <option value="" disabled selected>請選擇...</option>
+                            ${productOptions.map(p => `<option value="${p}">${p}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="col-3">
+                        <label class="small text-muted">數量</label>
+                        <input type="number" class="form-control product-count" value="1" min="1" required>
+                    </div>
+                    <div class="col-2 d-flex align-items-end justify-content-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow('${rowId}')">✕</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', rowHtml);
+    }
+
+    // 3. 刪除品項列
+    function removeRow(id) {
+        if (document.querySelectorAll('.item-row').length > 1) {
+            document.getElementById(id).remove();
+        } else {
+            alert("訂單至少需包含一項產品。");
+        }
+    }
+
+    // 4. 處理表單提交
+    document.getElementById('orderForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // 顯示載入遮罩
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        document.getElementById('submitBtn').disabled = true;
+
+        // 收集所有品項
+        const items = [];
+        document.querySelectorAll('.item-row').forEach(row => {
+            const productName = row.querySelector('.product-select').value;
+            const count = row.querySelector('.product-count').value;
+            if (productName) {
+                items.push({ productName, count });
+            }
+        });
+
+        // 準備傳送到 GAS 的資料
+        const profile = await liff.getProfile();
+        const payload = {
+            orderDate: document.getElementById('orderDate').value,
+            shopName: document.getElementById('shopName').value,
+            ordererName: document.getElementById('ordererName').value,
+            shipDate: document.getElementById('shipDate').value,
+            items: items,
+            userId: profile.userId
+        };
+
+        // 呼叫 GAS 後端
+        google.script.run
+            .withSuccessHandler(() => {
+                // 成功後傳送 LINE 訊息並關閉
+                liff.sendMessages([{
+                    type: 'text',
+                    text: `✅ 訂單已送出！\n店家：${payload.shopName}\n出貨日：${payload.shipDate}\n共 ${items.length} 項品項。`
+                }]).then(() => {
+                    liff.closeWindow();
+                });
+            })
+            .withFailureHandler((err) => {
+                alert("儲存失敗，請重試：" + err);
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('submitBtn').disabled = false;
+            })
+            .saveFormData(payload);
+    });
+</script>
+
+</body>
+</html>
