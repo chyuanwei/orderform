@@ -2,231 +2,191 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>泉威食品 - 訂單系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>泉威食品訂單</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f0f2f5; padding: 15px; font-family: "Microsoft JhengHei", sans-serif; }
-        .order-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        .section-title { border-left: 5px solid #06C755; padding-left: 10px; margin: 20px 0 15px 0; font-weight: bold; }
-        .item-row { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 10px; border: 1px solid #e9ecef; }
-        .btn-line { background-color: #06C755; color: white; border: none; font-weight: bold; }
-        .btn-outline-line { border: 1px solid #06C755; color: #06C755; background: white; font-weight: bold; }
-        .readonly-field { background-color: #e9ecef !important; }
+        body { background-color: #f0f2f5; padding: 15px; }
+        .order-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        .item-row { background: #f8f9fa; border-radius: 8px; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; }
         .d-none { display: none !important; }
-        .confirm-box { background: #fdfdfd; border: 1px solid #eee; border-radius: 12px; padding: 20px; }
-        .confirm-item { font-size: 0.95rem; border-bottom: 1px dashed #ddd; padding: 8px 0; }
-        #loadingOverlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
-        }
+        #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
 
-<div id="loadingOverlay">
-    <div class="spinner-border text-success" role="status"></div>
-    <p class="mt-2">系統處理中...</p>
+<div id="loading" class="flex-column">
+    <div class="spinner-border text-success"></div>
+    <p>處理中...</p>
 </div>
 
 <div class="container order-container">
-    <h3 class="text-center mb-4" style="color: #06C755;">泉威食品訂購單</h3>
-    
+    <h4 class="text-center mb-4 text-success">泉威食品訂購單</h4>
+
     <div id="step1">
         <form id="orderForm">
-            <div class="section-title">基本資料</div>
             <div class="mb-3">
-                <label class="form-label small text-muted">下單日期</label>
-                <input type="date" class="form-control readonly-field" id="orderDate" readonly>
+                <label class="small text-muted">下單日期</label>
+                <input type="date" id="orderDate" class="form-control" readonly style="background:#eee">
             </div>
             <div class="mb-3">
-                <label class="form-label">店家名稱</label>
-                <input type="text" class="form-control" id="shopName" required placeholder="請輸入店名">
+                <label>店家名稱</label>
+                <input type="text" id="shopName" class="form-control" required>
             </div>
             <div class="mb-3">
-                <label class="form-label small text-muted">訂購人 (LINE)</label>
-                <input type="text" class="form-control readonly-field" id="ordererName" readonly placeholder="系統載入中...">
+                <label class="small text-muted">訂購人 (LINE)</label>
+                <input type="text" id="ordererName" class="form-control" readonly style="background:#eee" value="載入中...">
             </div>
             <div class="mb-3">
-                <label class="form-label">預計出貨日期</label>
-                <input type="date" class="form-control" id="shipDate" required>
+                <label>出貨日期</label>
+                <input type="date" id="shipDate" class="form-control" required>
             </div>
-
-            <div class="section-title">訂購項目</div>
+            <hr>
+            <h6>訂購項目</h6>
             <div id="itemList"></div>
-            <button type="button" class="btn btn-outline-line w-100 mb-4" onclick="addItemRow()">+ 增加一筆品項</button>
-
-            <button type="submit" class="btn btn-line w-100 py-3">下一步：核對內容</button>
+            <button type="button" class="btn btn-outline-success btn-sm w-100 mb-3" onclick="addItem()">+ 增加品項</button>
+            <button type="submit" class="btn btn-success w-100 py-3">下一步：核對訂單</button>
         </form>
     </div>
 
     <div id="step2" class="d-none">
-        <div class="section-title">請核對您的訂單</div>
-        <div class="confirm-box mb-4" id="confirmDetail"></div>
+        <h5>請核對訂單內容</h5>
+        <div id="confirmBox" class="p-3 bg-light border rounded mb-3"></div>
         <div class="row g-2">
-            <div class="col-6">
-                <button type="button" class="btn btn-outline-secondary w-100 py-2" onclick="switchStep(2, 1)">返回修改</button>
-            </div>
-            <div class="col-6">
-                <button type="button" class="btn btn-line w-100 py-2" onclick="handleFinalSubmit()">確認送出</button>
-            </div>
+            <div class="col-6"><button class="btn btn-secondary w-100" onclick="showStep(1)">返回修改</button></div>
+            <div class="col-6"><button class="btn btn-success w-100" onclick="doFinalSubmit()">確認送出</button></div>
         </div>
     </div>
 
     <div id="step3" class="d-none text-center">
-        <div class="py-4">
-            <div class="display-4 text-success mb-3">✅</div>
-            <h4 class="mb-4">訂單已送出成功！</h4>
-            <div class="confirm-box text-start mb-4" id="resultSummary"></div>
-            <button type="button" class="btn btn-line w-100 py-3" onclick="liff.closeWindow()">關閉視窗</button>
-        </div>
+        <h2 class="text-success">✅</h2>
+        <h5>訂單已成功送出！</h5>
+        <div id="resultBox" class="p-3 bg-light border rounded my-3 text-start small"></div>
+        <button class="btn btn-success w-100" onclick="liff.closeWindow()">關閉視窗</button>
     </div>
 </div>
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-    // --- ⚠️ 請務必確認這兩個參數 ---
-    const LIFF_ID = "2008894056-few4uzMm"; 
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwRDNZrsmN2yBEi35KmkpcVjN88Dtom5X7FRVhCffFeeXCWbRiDylRmbqMUV3CqX9Uz-g/exec"; 
-    // ----------------------------
-
+    // --- 配置 ---
+    const LIFF_ID = "2008894056-few4uzMm";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwRDNZrsmN2yBEi35KmkpcVjN88Dtom5X7FRVhCffFeeXCWbRiDylRmbqMUV3CqX9Uz-g/exec";
+    
     let productOptions = [];
-    let currentPayload = null;
-    let userProfile = { displayName: "未知用戶", userId: "" };
+    let savedData = null;
 
-    // 初始化流程
-    window.onload = async function() {
+    // --- 啟動邏輯 ---
+    window.onload = function() {
+        // A. 立即設定日期 (這是最保險的)
         try {
-            // 1. 先解決日期顯示 (最快，不依賴任何外部)
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('orderDate').value = today;
-            document.getElementById('shipDate').setAttribute('min', today);
+            document.getElementById('shipDate').value = today;
+        } catch(e) { alert("日期設定失敗: " + e); }
 
-            // 2. 初始化 LIFF
-            await liff.init({ liffId: LIFF_ID });
+        // B. 初始化 LIFF
+        liff.init({ liffId: LIFF_ID }).then(() => {
             if (!liff.isLoggedIn()) {
                 liff.login();
-                return;
-            }
-            userProfile = await liff.getProfile();
-            document.getElementById('ordererName').value = userProfile.displayName;
-
-            // 3. 抓取品項
-            const resp = await fetch(GAS_URL);
-            if (!resp.ok) throw new Error("GAS 回應錯誤");
-            productOptions = await resp.json();
-            
-            if (productOptions.length > 0) {
-                addItemRow();
             } else {
-                alert("品項清單是空的，請檢查試算表。");
+                liff.getProfile().then(p => {
+                    document.getElementById('ordererName').value = p.displayName;
+                });
             }
-        } catch (err) {
-            alert("載入過程中斷：" + err.message);
-            console.error(err);
-        }
+            
+            // C. 抓取產品
+            fetch(GAS_URL)
+                .then(res => res.json())
+                .then(data => {
+                    productOptions = data;
+                    addItem(); // 預設一行
+                })
+                .catch(err => alert("抓取產品失敗: " + err));
+                
+        }).catch(err => alert("LIFF 初始化失敗: " + err));
     };
 
-    function addItemRow() {
-        const container = document.getElementById('itemList');
-        const rowId = 'row_' + Date.now();
-        const rowHtml = `
-            <div class="item-row" id="${rowId}">
-                <div class="row g-2">
-                    <div class="col-7">
-                        <select class="form-select product-select" required>
-                            <option value="" disabled selected>請選擇...</option>
-                            ${productOptions.map(p => `<option value="${p}">${p}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="col-3">
-                        <input type="number" class="form-control product-count" value="1" min="1" required>
-                    </div>
-                    <div class="col-2 text-end">
-                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow('${rowId}')">✕</button>
-                    </div>
+    // --- 功能函式 ---
+    function addItem() {
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.innerHTML = `
+            <div class="row g-2">
+                <div class="col-8">
+                    <select class="form-select p-sel" required>
+                        <option value="" disabled selected>請選擇品項</option>
+                        ${productOptions.map(p => `<option value="${p}">${p}</option>`).join('')}
+                    </select>
                 </div>
-            </div>`;
-        container.insertAdjacentHTML('beforeend', rowHtml);
-    }
-
-    function removeRow(id) {
-        if (document.querySelectorAll('.item-row').length > 1) {
-            document.getElementById(id).remove();
-        }
-    }
-
-    function switchStep(from, to) {
-        document.getElementById('step' + from).classList.add('d-none');
-        document.getElementById('step' + to).classList.remove('d-none');
-        window.scrollTo(0, 0);
-    }
-
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        try {
-            const items = [];
-            document.querySelectorAll('.item-row').forEach(row => {
-                const p = row.querySelector('.product-select').value;
-                const c = row.querySelector('.product-count').value;
-                if (p) items.push({ productName: p, count: c });
-            });
-
-            currentPayload = {
-                orderDate: document.getElementById('orderDate').value,
-                shopName: document.getElementById('shopName').value,
-                ordererName: document.getElementById('ordererName').value,
-                shipDate: document.getElementById('shipDate').value,
-                items: items,
-                userId: userProfile.userId
-            };
-
-            renderSummary('confirmDetail');
-            switchStep(1, 2);
-        } catch (err) {
-            alert("處理預覽失敗：" + err.message);
-        }
-    });
-
-    function renderSummary(elementId) {
-        let itemsHtml = currentPayload.items.map(i => `
-            <div class="confirm-item d-flex justify-content-between">
-                <span>${i.productName}</span>
-                <span class="fw-bold">x ${i.count}</span>
-            </div>`).join('');
-            
-        document.getElementById(elementId).innerHTML = `
-            <div class="mb-2 small"><b>店家：</b>${currentPayload.shopName}</div>
-            <div class="mb-2 small"><b>出貨日：</b>${currentPayload.shipDate}</div>
-            <div class="mb-2 small"><b>訂購人：</b>${currentPayload.ordererName}</div>
-            <div class="mt-3 border-top pt-2">${itemsHtml}</div>
+                <div class="col-4">
+                    <input type="number" class="form-control p-cnt" value="1" min="1">
+                </div>
+            </div>
         `;
+        document.getElementById('itemList').appendChild(div);
     }
 
-    function handleFinalSubmit() {
-        const overlay = document.getElementById('loadingOverlay');
-        overlay.style.display = 'flex';
+    function showStep(n) {
+        [1, 2, 3].forEach(i => document.getElementById('step'+i).classList.add('d-none'));
+        document.getElementById('step'+n).classList.remove('d-none');
+    }
 
+    // 處理預覽
+    document.getElementById('orderForm').onsubmit = function(e) {
+        e.preventDefault();
+        const items = [];
+        document.querySelectorAll('.item-row').forEach(row => {
+            items.push({
+                name: row.querySelector('.p-sel').value,
+                count: row.querySelector('.p-cnt').value
+            });
+        });
+
+        savedData = {
+            orderDate: document.getElementById('orderDate').value,
+            shopName: document.getElementById('shopName').value,
+            ordererName: document.getElementById('ordererName').value,
+            shipDate: document.getElementById('shipDate').value,
+            items: items
+        };
+
+        const html = `
+            <b>店家：</b>${savedData.shopName}<br>
+            <b>日期：</b>${savedData.shipDate}<br>
+            <b>內容：</b><br>
+            ${savedData.items.map(i => i.name + ' x ' + i.count).join('<br>')}
+        `;
+        document.getElementById('confirmBox').innerHTML = html;
+        document.getElementById('resultBox').innerHTML = html;
+        showStep(2);
+    };
+
+    // 最終送出
+    function doFinalSubmit() {
+        document.getElementById('loading').style.display = 'flex';
+        
+        // 發送到 GAS
         fetch(GAS_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify(currentPayload)
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify({
+                ...savedData,
+                userId: liff.getContext() ? liff.getContext().userId : ""
+            })
         });
 
         setTimeout(() => {
-            overlay.style.display = 'none';
-            renderSummary('resultSummary');
-            switchStep(2, 3);
-            
+            document.getElementById('loading').style.display = 'none';
+            showStep(3);
             if (liff.isInClient()) {
                 liff.sendMessages([{
                     type: 'text',
-                    text: `✅ 泉威訂單已成功送出！\n店家：${currentPayload.shopName}\n出貨：${currentPayload.shipDate}`
-                }]).catch(e => console.log("訊息傳送失敗"));
+                    text: "📦 泉威訂單已送出！\n店家：" + savedData.shopName
+                }]);
             }
-        }, 800);
+        }, 1000);
     }
 </script>
+
 </body>
 </html>
