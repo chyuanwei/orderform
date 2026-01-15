@@ -202,12 +202,12 @@ async function handleFinalSubmit() {
         setTimeout(async () => {
             overlay.style.display = 'none';
             renderSummary('resultSummary');
-            switchStep(2, 3);
+            switchStep(2, 3); // 切換到 Step 3 成功畫面
 
             // 3. 處理訊息發送
             if (liff.isInClient()) {
                 const itemsMsg = currentPayload.items.map(i => `・${i.name} x ${i.count}`).join('\n');
-                const fullMsg = `【Line表單】\n訂單已送出如下：\n--------------------\n下單日期：${currentPayload.orderDate}\n店家名稱：${currentPayload.shopName}\n訂購人：${currentPayload.ordererName}\n預計出貨日：${currentPayload.shipDate}\n--------------------\n訂購明細：\n${itemsMsg}`;
+                const fullMsg = `我已下單如下：\n--------------------\n下單日期：${currentPayload.orderDate}\n店家名稱：${currentPayload.shopName}\n訂購人：${currentPayload.ordererName}\n預計出貨日：${currentPayload.shipDate}\n--------------------\n訂購明細：\n${itemsMsg}`;
 
                 try {
                     // 使用 await 確保訊息傳送完成
@@ -217,14 +217,11 @@ async function handleFinalSubmit() {
                     }]);
                     console.log("訊息傳送成功");
                     
-                    // 訊息傳完後，延遲 1 秒再自動關窗，讓使用者看一眼 Step 3
-                    setTimeout(() => {
-                        liff.closeWindow();
-                    }, 1500);
+                    // ⚠️ 注意：這裡不再執行 liff.closeWindow()，讓畫面停留在 Step 3
                     
                 } catch (err) {
                     console.error("訊息傳送失敗:", err);
-                    alert("訂單已記錄，但無法發送對帳訊息。請檢查 LINE 權限設定。");
+                    alert("訂單已記錄，但無法發送對帳訊息。");
                 }
             }
         }, 800);
