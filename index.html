@@ -207,7 +207,7 @@ async function handleFinalSubmit() {
             // 3. 處理訊息發送
             if (liff.isInClient()) {
                 const itemsMsg = currentPayload.items.map(i => `・${i.name} x ${i.count}`).join('\n');
-                const fullMsg = `我已下單如下：\n--------------------\n下單日期：${currentPayload.orderDate}\n店家名稱：${currentPayload.shopName}\n訂購人：${currentPayload.ordererName}\n預計出貨日：${currentPayload.shipDate}\n--------------------\n訂購明細：\n${itemsMsg}`;
+                const fullMsg = `【Line表單】訂單已送出如下：\n--------------------\n下單日期：${currentPayload.orderDate}\n店家名稱：${currentPayload.shopName}\n訂購人：${currentPayload.ordererName}\n預計出貨日：${currentPayload.shipDate}\n--------------------\n訂購明細：\n${itemsMsg}`;
 
                 try {
                     // 使用 await 確保訊息傳送完成
