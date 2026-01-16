@@ -118,7 +118,7 @@
 
     function addItemRow() {
         const container = document.getElementById('itemList');
-        const rowId = 'row_' + Date.now();
+        const rowId = 'row_' + Date.now() + Math.floor(Math.random() * 1000);
         const rowHtml = `
             <div class="item-row" id="${rowId}">
                 <div class="row g-2">
@@ -159,8 +159,11 @@
                     count: row.querySelector('.product-count').value
                 });
             });
-
+            // 取得 URL 中的參數
+            const urlParams = new URLSearchParams(window.location.search);
+            const botIdFromUrl = urlParams.get('botId') || "LIFF_DEFAULT";
             currentPayload = {
+                destination: botIdFromUrl,
                 orderDate: document.getElementById('orderDate').value,
                 shopName: document.getElementById('shopName').value,
                 ordererName: document.getElementById('ordererName').value,
