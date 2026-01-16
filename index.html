@@ -196,10 +196,11 @@ async function handleFinalSubmit() {
         // 1. 先發送資料到 GAS (不等待回應)
         fetch(GAS_URL, {
             method: "POST",
-            mode: "no-cors",
             headers: { "Content-Type": "text/plain" },
             body: JSON.stringify(currentPayload)
-        });
+        }).then(response => response.text())
+            .then(data => console.log("GAS 回應:", data))
+            .catch(err => console.error("傳送失敗:", err));
 
         // 2. 顯示成功畫面 (Step 3)
         setTimeout(async () => {
