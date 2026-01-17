@@ -51,15 +51,20 @@
 
     <script>
         // ==========================================
-        // ⚠️ 請填入您的資訊
+        // ⚠️ 參數設定
         // ==========================================
-        const MY_LIFF_ID = "2008894056-few4uzMm"; // 在 LINE Developers 取得
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynXv6q131cFdR4ARBc7pnFwUZ0fX0AriqXlPhAxvYyUd3eHZCrHXIaiYUcFO8J2acV/exec"; // 就是剛才部署得到的網址
-        // ==========================================
+        const MY_LIFF_ID = "2008894056-few4uzMm";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynXv6q131cFdR4ARBc7pnFwUZ0fX0AriqXlPhAxvYyUd3eHZCrHXIaiYUcFO8J2acV/exec";
+        
+        // 全域變數：確保所有按鈕都能共用合成後的結果
+        let currentImageUrl = ""; 
+        let currentBase64 = "";   
 
         const submitBtn = document.getElementById('submitBtn');
         const loading = document.getElementById('loading');
         const resultImg = document.getElementById('resultImg');
+        const actionButtons = document.getElementById('actionButtons');
+        const iosHint = document.getElementById('iosHint');
 
         // 初始化 LIFF
         async function initLiff() {
@@ -80,25 +85,27 @@
             const compressedFile = await imageCompression(file, options);
             return new Promise((resolve) => {
                 const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result.split(',')[1]); // 只要 Base64 資料部分
+                reader.onloadend = () => resolve(reader.result.split(',')[1]); 
                 reader.readAsDataURL(compressedFile);
             });
         }
 
+        // 開始合成按鈕
         submitBtn.onclick = async () => {
-        const pFile = document.getElementById('productInput').files[0];
-        const lFile = document.getElementById('logoInput').files[0];
-        if (!pFile || !lFile) return alert('請上傳產品照片與 Logo');
-    
-        // 開啟 Loading，關閉按鈕
-        submitBtn.disabled = true;
-        loading.style.display = 'block';
-        resultImg.style.display = 'none';
+            const pFile = document.getElementById('productInput').files[0];
+            const lFile = document.getElementById('logoInput').files[0];
+            if (!pFile || !lFile) return alert('請上傳產品照片與 Logo');
+            
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            resultImg.style.display = 'none';
+            actionButtons.style.display = 'none';
+            iosHint.style.display = 'none';
 
-        try {
+            try {
                 const pBase64 = await processImage(pFile);
                 const lBase64 = await processImage(lFile);
-        
+                
                 const response = await fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
                     body: JSON.stringify({
@@ -107,27 +114,24 @@
                         prompt: document.getElementById('promptInput').value
                     })
                 });
-        
+                
                 const resData = await response.json();
                 console.log("收到的回應：", resData);
-        
-				let currentImageUrl = ""; // 儲存公開網址
-				let currentBase64 = "";   // 儲存 Base64
-				
-				// 在 resData.status === 'success' 的邏輯內加入：
-				if (resData.status === 'success' && resData.image) {
-				    currentBase64 = resData.image;
-				    currentImageUrl = resData.publicUrl; // 來自後端
-				
-				    resultImg.src = 'data:image/jpeg;base64,' + currentBase64;
-				    resultImg.style.display = 'block';
-				    
-				    // 顯示按鈕
-				    document.getElementById('actionButtons').style.display = 'flex';
-				    document.getElementById('iosHint').style.display = 'block';
-				}
+
+                if (resData.status === 'success' && resData.image) {
+                    // 存入全域變數
+                    currentBase64 = resData.image;
+                    currentImageUrl = resData.publicUrl; 
+
+                    // 顯示圖片
+                    resultImg.src = 'data:image/jpeg;base64,' + currentBase64;
+                    resultImg.style.display = 'block';
                     
-                    // 滾動到圖片位置，讓使用者看到結果
+                    // 顯示後續操作按鈕
+                    actionButtons.style.display = 'flex';
+                    iosHint.style.display = 'block';
+                    
+                    // 平滑滾動至結果
                     resultImg.scrollIntoView({ behavior: 'smooth' });
                 } else {
                     alert('合成失敗：' + (resData.error || 'AI 未能回傳影像'));
@@ -139,41 +143,43 @@
                 submitBtn.disabled = false;
                 loading.style.display = 'none';
             }
-        	};
-		// --- 下載功能 ---
-		document.getElementById('downloadBtn').onclick = () => {
-		    const byteCharacters = atob(currentBase64);
-		    const byteNumbers = new Array(byteCharacters.length);
-		    for (let i = 0; i < byteCharacters.length; i++) {
-		        byteNumbers[i] = byteCharacters.charCodeAt(i);
-		    }
-		    const blob = new Blob([new Uint8Array(byteNumbers)], {type: 'image/jpeg'});
-		    const link = document.createElement('a');
-		    link.href = URL.createObjectURL(blob);
-		    link.download = 'AI_Design_Result.jpg';
-		    link.click();
-		};
-		
-		// --- LINE 分享功能 ---
-		document.getElementById('shareBtn').onclick = async () => {
-		    if (!liff.isApiAvailable('shareTargetPicker')) {
-		        return alert('請在 LINE App 內使用分享功能');
-		    }
-		    try {
-		        await liff.shareTargetPicker([
-		            {
-		                "type": "image",
-		                "originalContentUrl": currentImageUrl,
-		                "previewImageUrl": currentImageUrl
-		            }
-		        ]);
-		        alert('分享成功！');
-		    } catch (error) {
-		        console.error("分享失敗", error);
-		        alert('分享已取消');
-		    }
-		};
-		
+        };
+
+        // --- 下載功能 ---
+        document.getElementById('downloadBtn').onclick = () => {
+            if (!currentBase64) return alert('尚未有合成結果可下載');
+            const byteCharacters = atob(currentBase64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const blob = new Blob([new Uint8Array(byteNumbers)], {type: 'image/jpeg'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'AI_Design_Result.jpg';
+            link.click();
+        };
+        
+        // --- LINE 分享功能 ---
+        document.getElementById('shareBtn').onclick = async () => {
+            if (!currentImageUrl) return alert('分享連結尚未產生，請稍後再試');
+            if (!liff.isApiAvailable('shareTargetPicker')) {
+                return alert('請在 LINE App 內使用分享功能');
+            }
+            try {
+                await liff.shareTargetPicker([
+                    {
+                        "type": "image",
+                        "originalContentUrl": currentImageUrl,
+                        "previewImageUrl": currentImageUrl
+                    }
+                ]);
+                alert('分享成功！');
+            } catch (error) {
+                console.error("分享失敗", error);
+                alert('分享已取消');
+            }
+        };
     </script>
 </body>
 </html>
