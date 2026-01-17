@@ -168,10 +168,18 @@
         
         // --- LINE 分享功能 ---
         document.getElementById('shareBtn').onclick = async () => {
-            if (!currentImageUrl) return alert('分享連結尚未產生，請稍後再試');
-            if (!liff.isApiAvailable('shareTargetPicker')) {
-                return alert('請在 LINE App 內使用分享功能');
+            // 檢查是否有連結
+            if (!currentImageUrl) {
+                alert('圖片網址正在產生中（ImgBB 處理中），請等 2 秒後再點一次');
+                return;
             }
+            
+            // 檢查分享功能是否可用
+            if (!liff.isApiAvailable('shareTargetPicker')) {
+                alert('請在 LINE App 內使用分享功能');
+                return;
+            }
+        
             try {
                 await liff.shareTargetPicker([
                     {
@@ -180,10 +188,9 @@
                         "previewImageUrl": currentImageUrl
                     }
                 ]);
-                alert('分享成功！');
+                console.log("分享成功");
             } catch (error) {
                 console.error("分享失敗", error);
-                alert('分享已取消');
             }
         };
     </script>
