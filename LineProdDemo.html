@@ -49,156 +49,132 @@
         <p id="iosHint" style="display:none; font-size: 12px; color: #888; text-align: center; margin-top: 5px;">iOS 使用者請長按圖片儲存</p>
     </div>
 
-    <script>
-        // ==========================================
-        // ⚠️ 基本參數設定
-        // ==========================================
-        const MY_LIFF_ID = "2008894056-few4uzMm"; 
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynXv6q131cFdR4ARBc7pnFwUZ0fX0AriqXlPhAxvYyUd3eHZCrHXIaiYUcFO8J2acV/exec";
-    
-        // 全域變數：儲存合成結果供下載與分享使用
-        let currentBase64 = "";   
-        let currentImageUrl = ""; 
-    
-        // DOM 元素選取
-        const submitBtn = document.getElementById('submitBtn');
-        const loading = document.getElementById('loading');
-        const resultImg = document.getElementById('resultImg');
-        const actionButtons = document.getElementById('actionButtons');
-        const iosHint = document.getElementById('iosHint');
-    
-        // 1. 初始化 LIFF
-        async function initLiff() {
-            try {
-                await liff.init({ liffId: MY_LIFF_ID });
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                }
-            } catch (err) {
-                console.error('LIFF 初始化失敗', err);
+<script>
+    // ==========================================
+    // ⚠️ 基礎設定 (已對照您的圖 6 確認)
+    // ==========================================
+    const MY_LIFF_ID = "2008894056-few4uzMm"; 
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynXv6q131cFdR4ARBc7pnFwUZ0fX0AriqXlPhAxvYyUd3eHZCrHXIaiYUcFO8J2acV/exec";
+
+    // 強制掛載於 window 以確保全域存取
+    window.currentBase64 = "";   
+    window.currentImageUrl = ""; 
+
+    const submitBtn = document.getElementById('submitBtn');
+    const loading = document.getElementById('loading');
+    const resultImg = document.getElementById('resultImg');
+    const actionButtons = document.getElementById('actionButtons');
+    const iosHint = document.getElementById('iosHint');
+
+    // 1. 初始化 LIFF
+    async function initLiff() {
+        try {
+            await liff.init({ liffId: MY_LIFF_ID });
+            if (!liff.isLoggedIn()) {
+                liff.login();
             }
+        } catch (err) {
+            console.error('LIFF 初始化失敗', err);
         }
-        initLiff();
-    
-        // 2. 圖片處理：壓縮並轉為 Base64 (不含前綴)
-        async function processImage(file) {
-            const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1024, useWebWorker: true };
-            const compressedFile = await imageCompression(file, options);
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result.split(',')[1]); 
-                reader.readAsDataURL(compressedFile);
+    }
+    initLiff();
+
+    // 2. 圖片處理
+    async function processImage(file) {
+        const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1024, useWebWorker: true };
+        const compressedFile = await imageCompression(file, options);
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]); 
+            reader.readAsDataURL(compressedFile);
+        });
+    }
+
+    // 3. 開始合成
+    submitBtn.onclick = async () => {
+        const pFile = document.getElementById('productInput').files[0];
+        const lFile = document.getElementById('logoInput').files[0];
+        if (!pFile || !lFile) return alert('請上傳產品照片與 Logo');
+        
+        submitBtn.disabled = true;
+        loading.style.display = 'block';
+        resultImg.style.display = 'none';
+        actionButtons.style.display = 'none';
+        iosHint.style.display = 'none';
+
+        try {
+            const pBase64 = await processImage(pFile);
+            const lBase64 = await processImage(lFile);
+            
+            const response = await fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    productImage: pBase64,
+                    logoImage: lBase64,
+                    prompt: document.getElementById('promptInput').value
+                })
             });
-        }
-    
-        // 3. 點擊「開始合成」邏輯
-        submitBtn.onclick = async () => {
-            const pFile = document.getElementById('productInput').files[0];
-            const lFile = document.getElementById('logoInput').files[0];
             
-            if (!pFile || !lFile) return alert('請上傳產品照片與 Logo');
-    
-            // UI 狀態切換
-            submitBtn.disabled = true;
-            loading.style.display = 'block';
-            resultImg.style.display = 'none';
-            actionButtons.style.display = 'none';
-            iosHint.style.display = 'none';
-    
-            try {
-                // 壓縮圖片
-                const pBase64 = await processImage(pFile);
-                const lBase64 = await processImage(lFile);
-    
-                // 發送至 GAS 後端
-                const response = await fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        productImage: pBase64,
-                        logoImage: lBase64,
-                        prompt: document.getElementById('promptInput').value
-                    })
-                });
-    
-                const resData = await response.json();
-                console.log("後端回應資料：", resData);
-    
-                if (resData.status === 'success' && resData.image) {
-                    // 更新全域變數
-                    currentBase64 = resData.image;
-                    currentImageUrl = resData.publicUrl || ""; 
-    
-                    // 顯示合成結果
-                    resultImg.src = 'data:image/jpeg;base64,' + currentBase64;
-                    resultImg.style.display = 'block';
-                    
-                    // 顯示操作按鈕與提示
-                    actionButtons.style.display = 'flex';
-                    iosHint.style.display = 'block';
-                    iosHint.innerHTML = "✨ 合成成功！<br><b>LINE 使用者請「長按圖片」進行儲存</b>";
-                    
-                    // 平滑滾動至結果圖片
-                    resultImg.scrollIntoView({ behavior: 'smooth' });
-                } else {
-                    alert('合成失敗：' + (resData.error || 'AI 服務暫時無法回應'));
-                }
-            } catch (err) {
-                console.error("前端執行錯誤：", err);
-                alert('系統忙碌或連線逾時，請縮小圖片尺寸後再試一次。');
-            } finally {
-                submitBtn.disabled = false;
-                loading.style.display = 'none';
-            }
-        };
-    
-        // 4. 下載圖片按鈕 (在一般瀏覽器有效)
-        document.getElementById('downloadBtn').onclick = () => {
-            if (!currentBase64) return alert('請先完成合成');
-            
-            try {
-                const byteCharacters = atob(currentBase64);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const blob = new Blob([new Uint8Array(byteNumbers)], {type: 'image/jpeg'});
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'QuanWei_AI_Design.jpg';
-                link.click();
-            } catch (e) {
-                alert('此瀏覽器不支援直接下載，請長按圖片儲存。');
-            }
-        };
-    
-        // 5. LINE 分享功能
-        document.getElementById('shareBtn').onclick = async () => {
-            if (!currentImageUrl) {
-                return alert('分享連結產生中，請稍候 3 秒後再試');
-            }
-            
-            // 檢查 shareTargetPicker 權限
-            if (!liff.isApiAvailable('shareTargetPicker')) {
-                return alert('請在 LINE App 內使用此功能，並確認 Developers Console 已開啟 shareTargetPicker 權限。');
-            }
-    
-            try {
-                const result = await liff.shareTargetPicker([
-                    {
-                        "type": "image",
-                        "originalContentUrl": currentImageUrl,
-                        "previewImageUrl": currentImageUrl
-                    }
-                ]);
+            const resData = await response.json();
+
+            if (resData.status === 'success' && resData.image) {
+                // 立即更新全域變數
+                window.currentBase64 = resData.image;
+                window.currentImageUrl = resData.publicUrl || "";
+
+                resultImg.src = 'data:image/jpeg;base64,' + window.currentBase64;
+                resultImg.style.display = 'block';
                 
-                if (result) {
-                    console.log("分享訊息發送成功");
-                }
-            } catch (error) {
-                console.error("分享過程中斷:", error);
-                alert('分享未完成');
+                actionButtons.style.display = 'flex';
+                iosHint.style.display = 'block';
+                iosHint.innerHTML = "✨ 合成成功！<br><b>LINE 使用者請「長按上方圖片」儲存。</b>";
+                
+                resultImg.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                alert('合成失敗：' + (resData.error || 'AI 回傳異常'));
             }
-        };
-    </script>
+        } catch (err) {
+            alert('系統忙碌，請重新操作一次。');
+        } finally {
+            submitBtn.disabled = false;
+            loading.style.display = 'none';
+        }
+    };
+
+    // 4. 下載按鈕 (引導長按)
+    document.getElementById('downloadBtn').onclick = () => {
+        alert('因 LINE 系統限制，請直接「長按圖片」選擇「儲存圖片」即可！');
+    };
+    
+    // 5. LINE 分享功能
+    document.getElementById('shareBtn').onclick = async () => {
+        // 檢查環境與網址
+        if (!liff.isInClient()) {
+            return alert('請在手機 LINE App 內開啟此頁面');
+        }
+        if (!window.currentImageUrl || window.currentImageUrl === "") {
+            return alert('分享連結尚未產生，請稍候 3 秒後再試。');
+        }
+        
+        // 檢查權限
+        if (!liff.isApiAvailable('shareTargetPicker')) {
+            alert('分享功能尚未生效。請檢查 Developers Console 下方的 Scopes 設定是否有勾選 shareTargetPicker 並儲存。');
+            return;
+        }
+
+        try {
+            await liff.shareTargetPicker([
+                {
+                    "type": "image",
+                    "originalContentUrl": window.currentImageUrl,
+                    "previewImageUrl": window.currentImageUrl
+                }
+            ]);
+        } catch (error) {
+            console.error("分享失敗", error);
+            alert('分享未完成');
+        }
+    };
+</script>
 </body>
 </html>
