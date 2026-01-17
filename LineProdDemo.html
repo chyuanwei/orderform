@@ -104,6 +104,7 @@
                 });
 
                 const resData = await response.json();
+                console.log("後端回傳的原始資料：", resData); // <--- 加入這行
                 
                 if (resData.status === 'success' && resData.image) {
                     // 只有成功且有圖片資料時才賦值
