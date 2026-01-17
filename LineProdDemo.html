@@ -77,10 +77,10 @@
     <script>
         const MY_LIFF_ID = "2008894056-few4uzMm"; 
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynXv6q131cFdR4ARBc7pnFwUZ0fX0AriqXlPhAxvYyUd3eHZCrHXIaiYUcFO8J2acV/exec";
-
+    
         window.currentImageUrl = ""; 
         window.env = { isInLine: false, os: "" };
-
+    
         const el = {
             productInput: document.getElementById('productInput'),
             logoInput: document.getElementById('logoInput'),
@@ -96,18 +96,17 @@
             openInLineBtn: document.getElementById('openInLineBtn'),
             downloadBtn: document.getElementById('downloadBtn')
         };
-
+    
         async function initLiff() {
             try {
                 await liff.init({ liffId: MY_LIFF_ID });
                 window.env.isInLine = liff.isInClient();
                 window.env.os = liff.getOS();
                 if (!liff.isLoggedIn()) liff.login();
-            } catch (err) { console.error(err); }
+            } catch (err) { console.error('LIFF Init Error', err); }
         }
         initLiff();
-
-        // 圖片預覽邏輯
+    
         function setupPreview(input, thumb) {
             input.onchange = () => {
                 const file = input.files[0];
@@ -120,7 +119,7 @@
         }
         setupPreview(el.productInput, el.productThumb);
         setupPreview(el.logoInput, el.logoThumb);
-
+    
         async function processImage(file) {
             const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1024, useWebWorker: true };
             const compressedFile = await imageCompression(file, options);
@@ -130,12 +129,12 @@
                 reader.readAsDataURL(compressedFile);
             });
         }
-
+    
         el.submitBtn.onclick = async () => {
-            if (!el.productInput.files[0] || !el.logoInput.files[0]) return alert('請選擇照片');
+            if (!el.productInput.files[0] || !el.logoInput.files[0]) return alert('請先上傳產品與 Logo 照片');
             el.submitBtn.disabled = true; el.loading.style.display = 'block';
             el.resultImg.style.display = 'none'; el.actionButtons.style.display = 'none'; el.hintText.style.display = 'none';
-
+    
             try {
                 const pB = await processImage(el.productInput.files[0]);
                 const lB = await processImage(el.logoInput.files[0]);
@@ -144,21 +143,24 @@
                     body: JSON.stringify({ productImage: pB, logoImage: lB, prompt: document.getElementById('promptInput').value })
                 });
                 const res = await response.json();
-
+    
                 if (res.status === 'success') {
                     window.currentImageUrl = res.publicUrl || "";
                     el.resultImg.src = window.currentImageUrl || ('data:image/jpeg;base64,' + res.image);
                     el.resultImg.style.display = 'block';
                     el.actionButtons.style.display = 'flex';
-
+    
                     if (window.env.isInLine) {
                         el.shareBtn.style.display = 'block'; el.openInLineBtn.style.display = 'none'; el.copyUrlBtn.style.display = 'none';
-                        el.hintText.style.display = 'block'; el.hintText.innerHTML = "✨ 合成成功！<br><b>請「長按圖片」儲存。</b>";
+                        el.downloadBtn.innerText = "⬇️ 下載提示";
+                        el.hintText.style.display = 'block'; el.hintText.innerHTML = "✨ 合成成功！<br><b>LINE 內請「長按圖片」儲存。</b>";
                     } else if (window.env.os === "ios" || window.env.os === "android") {
                         el.shareBtn.style.display = 'none'; el.openInLineBtn.style.display = 'block'; el.copyUrlBtn.style.display = 'block';
-                        el.hintText.style.display = 'block'; el.hintText.innerHTML = "💡 外部瀏覽器請「複製網址」後分享。";
+                        el.downloadBtn.innerText = "⬇️ 下載圖片";
+                        el.hintText.style.display = 'block'; el.hintText.innerHTML = "💡 外部瀏覽器請先「複製網址」，再點擊下方按鈕開啟 LINE。";
                     } else {
                         el.shareBtn.style.display = 'none'; el.openInLineBtn.style.display = 'none'; el.copyUrlBtn.style.display = 'block';
+                        el.downloadBtn.innerText = "⬇️ 下載圖片";
                         el.hintText.style.display = 'block'; el.hintText.innerHTML = "💡 PC 版請直接下載圖片或複製網址分享。";
                     }
                     el.resultImg.scrollIntoView({ behavior: 'smooth' });
@@ -166,37 +168,35 @@
             } catch (err) { alert('系統忙碌'); }
             finally { el.submitBtn.disabled = false; el.loading.style.display = 'none'; }
         };
-
-        // 核心修正：解決 PC 版跳轉問題的下載邏輯
+    
         el.downloadBtn.onclick = async () => {
             if (window.env.isInLine) {
-                alert('請直接「長按上方圖片」儲存！');
+                alert('請直接「長按上方圖片」並選擇「儲存圖片」即可！');
             } else if (window.env.os === "ios" || window.env.os === "android") {
                 window.open(el.resultImg.src, '_blank');
             } else {
-                // PC 版：使用 Blob 強制下載，不離開頁面
                 try {
                     const response = await fetch(el.resultImg.src);
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'AI_Design.jpg';
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                } catch (e) {
-                    // 如果 ImgBB 不支援 CORS fetch，則改用另開新頁
-                    window.open(el.resultImg.src, '_blank');
-                }
+                    a.href = url; a.download = 'AI_Design_Result.jpg';
+                    document.body.appendChild(a); a.click();
+                    window.URL.revokeObjectURL(url); document.body.removeChild(a);
+                } catch (e) { window.open(el.resultImg.src, '_blank'); }
             }
         };
         
         el.copyUrlBtn.onclick = () => {
-            navigator.clipboard.writeText(window.currentImageUrl).then(() => alert('網址已複製！'));
+            if (!window.currentImageUrl) return alert('尚未生成圖片');
+            navigator.clipboard.writeText(window.currentImageUrl).then(() => alert('圖片網址已複製！'));
         };
-        el.openInLineBtn.onclick = () => { window.location.href = "line://"; };
+    
+        // 核心修正：改用官方 https://line.me/R/ 連結，徹底解決「連結無效」報錯
+        el.openInLineBtn.onclick = () => {
+            window.location.href = "https://line.me/R/"; 
+        };
+    
         el.shareBtn.onclick = async () => {
             try { await liff.shareTargetPicker([{ "type": "image", "originalContentUrl": window.currentImageUrl, "previewImageUrl": window.currentImageUrl }]); }
             catch (error) { console.error(error); }
