@@ -1,169 +1,132 @@
-<html>
-
+<!DOCTYPE html>
+<html lang="zh-Hant">
 <head>
-  <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>泉威食品 - 操作說明書</title>
   <style type="text/css">
     @import url(https://themes.googleusercontent.com/fonts/css?kit=fpjTOVmNbO4Lz34iLyptLTi9jKYd1gJzj5O2gWsEpXol-nTHck7FFkZplK5meosG);
 
     /* --- RWD 核心補強 CSS --- */
+    body { margin: 0; padding: 0; background-color: #f8f9fa; font-family: "Calibri", "微軟正黑體", sans-serif; }
+    .doc-content { max-width: 850px; margin: 0 auto; padding: 20px; background-color: #ffffff; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+    img { max-width: 100% !important; height: auto !important; display: block; margin: 10px auto; border: 1px solid #eee; }
+    table { width: 100% !important; border-collapse: collapse; margin-bottom: 20px; }
     
-    /* 1. 基礎重設：讓圖片不超過螢幕 */
-    img {
-      max-width: 100% !important;
-      height: auto !important;
-    }
-
-    /* 2. 容器優化：移除固定外邊距 */
-    .doc-content {
-      max-width: 800px; /* 限制電腦版最大寬度 */
-      margin: 0 auto !important;
-      padding: 20px !important; /* 手機版內縮 */
-      background-color: #ffffff;
-    }
-
-    /* 3. 表格響應式處理 */
-    .c2 {
-      width: 100% !important;
-      border-collapse: collapse;
-    }
-
-    /* 當螢幕小於 768px (手機/平板) 時執行以下動作 */
+    /* 手機版自動堆疊邏輯 */
     @media (max-width: 768px) {
-      /* 讓表格單元格變成區塊元素，實現自動堆疊 */
-      .c17, .c10, .c28, .c33 {
-        display: block !important;
-        width: 100% !important;
-        padding: 10px 0 !important;
-      }
-      
-      /* 移除圖片外層多餘的固定寬度 */
-      span[style*="width"], img[style*="width"] {
-        width: 100% !important;
-        height: auto !important;
-      }
-
-      /* 讓文字居中顯示（可選） */
-      .c21 {
-        text-align: center !important;
-      }
+      td { display: block !important; width: 100% !important; padding: 10px 0 !important; }
+      .c17, .c10, .c28, .c33 { width: 100% !important; }
     }
 
-    /* --- 以下保留您原始的 Google Docs 樣式並微調 --- */
-
-    ul.lst-kix_list_1-0, ol.lst-kix_list_3-0, ul.lst-kix_list_5-7, ul.lst-kix_list_5-8, 
-    ul.lst-kix_list_5-5, ul.lst-kix_list_5-6, ul.lst-kix_list_1-3, ul.lst-kix_list_5-0,
-    ul.lst-kix_list_1-4, ul.lst-kix_list_1-1, ul.lst-kix_list_1-2, ul.lst-kix_list_5-3,
-    ul.lst-kix_list_1-7, ul.lst-kix_list_5-4, ul.lst-kix_list_1-8, ul.lst-kix_list_5-1,
-    ul.lst-kix_list_1-5, ul.lst-kix_list_5-2, ul.lst-kix_list_1-6, ol.lst-kix_list_6-0,
-    ol.lst-kix_list_2-0, ul.lst-kix_list_4-8, ul.lst-kix_list_4-6, ul.lst-kix_list_4-7,
-    ul.lst-kix_list_4-0, ul.lst-kix_list_4-1, ul.lst-kix_list_4-4, ul.lst-kix_list_4-5,
-    ul.lst-kix_list_4-2, ul.lst-kix_list_4-3, ul.lst-kix_list_3-7, ul.lst-kix_list_3-8,
-    ul.lst-kix_list_3-1, ul.lst-kix_list_3-2, ul.lst-kix_list_3-5, ul.lst-kix_list_3-6,
-    ul.lst-kix_list_3-3, ul.lst-kix_list_3-4, ul.lst-kix_list_6-6, ul.lst-kix_list_6-7,
-    ul.lst-kix_list_6-4, ul.lst-kix_list_2-8, ul.lst-kix_list_6-5, ul.lst-kix_list_6-8,
-    ul.lst-kix_list_2-2, ul.lst-kix_list_2-3, ul.lst-kix_list_2-1, ul.lst-kix_list_6-2,
-    ul.lst-kix_list_2-6, ul.lst-kix_list_6-3, ul.lst-kix_list_2-7, ul.lst-kix_list_2-4,
-    ul.lst-kix_list_6-1, ul.lst-kix_list_2-5 {
-      list-style-type: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .lst-kix_list_3-0>li:before { content: "" counter(lst-ctn-kix_list_3-0, decimal) ". " }
-    .lst-kix_list_6-0>li:before { content: "" counter(lst-ctn-kix_list_6-0, decimal) ". " }
-    .lst-kix_list_2-0>li:before { content: "" counter(lst-ctn-kix_list_2-0, decimal) ". " }
-    .lst-kix_list_5-0>li:before, .lst-kix_list_4-0>li:before, .lst-kix_list_1-0>li:before { content: "\0025cf   " }
-
-    ol { counter-reset: lst-ctn-kix_list_3-0 0 lst-ctn-kix_list_6-0 0 lst-ctn-kix_list_2-0 0; }
-    li { counter-increment: lst-ctn-kix_list_3-0; } /* 簡化計數邏輯 */
-
-    .c7, .c19, .c4, .c16, .c22, .c15 { margin-left: 20pt; padding: 5pt 0; line-height: 1.5; }
-    .c0, .c11, .c12 { font-family: "Calibri", "微軟正黑體"; font-size: 12pt; }
-    .c34 { font-size: 22pt; font-weight: 700; color: #17375e; }
-    .c27 { font-size: 16pt; font-weight: 700; }
-    .c26 { font-size: 14pt; font-weight: 700; color: #366091; border-left: 5px solid #366091; padding-left: 10px; }
-    .c14 { font-size: 12pt; font-weight: 700; background: #e8f0f7; padding: 5px; display: block; }
-    .c24, .c25, .c20, .c30, .c1 { text-align: center; }
-    .c31 { padding: 10px 0; }
-    hr { border: 0; border-top: 1px solid #ccc; margin: 20px 0; }
-
+    /* 文字樣式微調 */
+    .c34 { font-size: 24pt; font-weight: 700; color: #17375e; text-align: center; margin-top: 10px; }
+    .c27 { font-size: 18pt; font-weight: 700; text-align: center; color: #444; margin-bottom: 5px; }
+    .c26 { font-size: 15pt; font-weight: 700; color: #366091; border-left: 6px solid #366091; padding-left: 12px; margin-top: 30px; display: block; }
+    .c14 { font-size: 13pt; font-weight: 700; background: #eef4f9; padding: 10px; margin: 15px 0; border-radius: 5px; color: #2c4f7c; }
+    .c0 { font-size: 12pt; line-height: 1.6; color: #333; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 10px; list-style-type: disc; }
+    hr { border: 0; border-top: 1px solid #ddd; margin: 30px 0; }
   </style>
 </head>
 
 <body class="doc-content">
-  <p class="c24"><span class="c34">泉威食品 - LINE 訂購系統</span></p>
-  <p class="c25"><span class="c27">操作圖文說明書</span></p>
-  <p class="c20">
-    <span class="c23">適用對象：門市、加盟主、內勤下單人員</span>
+  <p class="c34">泉威食品 - LINE 訂購系統</p>
+  <p class="c27">操作圖文說明書</p>
+  <p style="text-align: center; color: #666; font-size: 11pt;">
+    適用對象：門市、加盟主、內勤下單人員<br>
+    版本日期：2026-01-17
   </p>
-  <p class="c30"><span class="c23">版本日期：2026-01-17</span></p>
   <hr>
-  
-  <p class="c18"><span class="c26">1. 系統目的與使用範圍</span></p>
-  <p class="c31">
-    <span class="c12">本系統用於簡化訂貨流程，讓店家可直接透過 LINE 提交訂貨需求。</span>
-  </p>
-  <p class="c31">
-    <span class="c12">適用情境包含：日常補貨、追加訂貨、出貨日前例行下單。</span>
-  </p>
 
-  <p class="c18"><span class="c26">2. 操作流程總覽</span></p>
-  <ul class="c3 lst-kix_list_5-0 start">
-    <li class="c7 li-bullet-0"><span class="c0">進入訂貨單頁面並填寫基本資料。</span></li>
-    <li class="c16 li-bullet-0"><span class="c0">新增訂貨品項：選擇產品並輸入數量（可多筆）。</span></li>
-    <li class="c16 li-bullet-0"><span class="c0">進入核對頁確認資料，必要時返回修改。</span></li>
-    <li class="c15 li-bullet-0"><span class="c0">確認送出，送出成功後關閉視窗返回 LINE。</span></li>
+  <span class="c26">1. 系統目的與使用範圍</span>
+  <p class="c0">本系統專為簡化「泉威布丁豆花」訂貨流程設計，讓店家能隨時隨地透過 LINE 快速下單，並確保後台即時接收訂單資訊。</p>
+
+  <span class="c26">2. 操作流程總覽</span>
+  <ul class="c0">
+    <li>填寫基本資料與預計出貨日。</li>
+    <li>選擇產品並輸入數量。</li>
+    <li>核對訂單內容。</li>
+    <li>送出訂單並確認成功畫面。</li>
   </ul>
 
-  <p class="c18"><span class="c26">3. 詳細操作步驟</span></p>
-  
-  <p class="c13"><span class="c14">步驟 1：進入系統與填寫基本資料</span></p>
-  <table class="c2">
+  <span class="c26">3. 詳細操作步驟</span>
+
+  <div class="c14">步驟 1：基本資料填寫</div>
+  <table>
     <tr>
-      <td class="c17">
-        <p class="c21">
-          <img alt="步驟1圖片" src="images/image1.jpg">
-        </p>
-      </td>
+      <td class="c17"><img src="images/image1.jpg" alt="步驟1"></td>
       <td class="c10">
-        <ul class="c3 lst-kix_list_5-0">
-          <li class="c19 li-bullet-0"><span class="c0">下單日期：系統自動帶入當天日期。</span></li>
-          <li class="c4 li-bullet-0"><span class="c0">店家名稱（必填）：輸入店名或客戶名稱。</span></li>
-          <li class="c4 li-bullet-0"><span class="c0">訂貨人（LINE）：系統自動帶入您的 LINE 名稱。</span></li>
-          <li class="c4 li-bullet-0"><span class="c0">預計出貨日期（必填）：點擊欄位選擇日期。</span></li>
-          <li class="c22 li-bullet-0"><span class="c0">完成後點「下一步：核對內容」。</span></li>
+        <ul class="c0">
+          <li><strong>下單日期：</strong>系統自動生成。</li>
+          <li><strong>店家名稱：</strong>請輸入您的店名。</li>
+          <li><strong>出貨日期：</strong>選擇您希望的出貨日。</li>
         </ul>
       </td>
     </tr>
   </table>
-  <p class="c1"><span class="c8">圖 1. 基本資料與訂貨項目</span></p>
 
-  <p class="c13"><span class="c14">步驟 2：選擇訂貨品項（下拉清單）</span></p>
-  <table class="c2">
+  <div class="c14">步驟 2：選擇品項（下拉選單）</div>
+  <table>
     <tr>
-      <td class="c28">
-        <p class="c21">
-          <img alt="步驟2圖片" src="images/image3.jpg">
-        </p>
-      </td>
+      <td class="c28"><img src="images/image3.jpg" alt="步驟2"></td>
       <td class="c33">
-        <ul class="c3 lst-kix_list_5-0">
-          <li class="c19 li-bullet-0"><span class="c0">點選品項文字列即可選擇該品項。</span></li>
-          <li class="c4 li-bullet-0"><span class="c0">右側勾點代表選取狀態。</span></li>
-          <li class="c22 li-bullet-0"><span class="c0">可上下滑動清單尋找所需品項。</span></li>
+        <ul class="c0">
+          <li>點選品項欄位會跳出下拉清單。</li>
+          <li>支援快速上下滑動尋找產品。</li>
         </ul>
       </td>
     </tr>
   </table>
-  <p class="c1"><span class="c8">圖 2. 品項下拉選單</span></p>
 
-  <p class="c18"><span class="c26">4. 注意事項</span></p>
-  <ul class="c3 lst-kix_list_5-0">
-    <li class="c7 li-bullet-0"><span class="c0">星號（*）欄位為必填，未填寫將無法進入下一步。</span></li>
-    <li class="c16 li-bullet-0"><span class="c0">送出後如需更改，請聯繫客服或於 LINE 補充說明。</span></li>
-    <li class="c15 li-bullet-0"><span class="c0">若畫面讀取過久，請檢查網路狀態並重新進入。</span></li>
+  <div class="c14">步驟 3：新增多筆品項與數量</div>
+  <table>
+    <tr>
+      <td class="c17"><img src="images/image2.jpg" alt="步驟3"></td>
+      <td class="c10">
+        <ul class="c0">
+          <li>輸入該品項的訂購數量。</li>
+          <li>點擊「+ 新增一筆」可繼續加選其他產品。</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <div class="c14">步驟 4：訂單核對</div>
+  <table>
+    <tr>
+      <td class="c17"><img src="images/image5.jpg" alt="步驟4"></td>
+      <td class="c10">
+        <ul class="c0">
+          <li>最後確認所有品項與數量是否正確。</li>
+          <li>若有錯誤可點擊「返回修改」。</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <div class="c14">步驟 5：完成送出</div>
+  <table>
+    <tr>
+      <td class="c17"><img src="images/image4.jpg" alt="步驟5"></td>
+      <td class="c10">
+        <ul class="c0">
+          <li>看到「訂單已送出成功」代表流程完成。</li>
+          <li>可點擊下方按鈕關閉視窗返回 LINE。</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <span class="c26">4. 注意事項</span>
+  <ul class="c0">
+    <li>標註（*）為必填，未填寫無法送出。</li>
+    <li>若網路不穩導致圖片無法載入，請重新整理頁面。</li>
+    <li>送出後如需取消，請直接於 LINE 聯絡總部。</li>
   </ul>
-</body>
 
+  <hr>
+  <p style="text-align: center; color: #999; font-size: 10pt;">© 2026 泉威食品 版權所有</p>
+</body>
 </html>
