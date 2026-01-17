@@ -121,7 +121,13 @@
                 if (resData.status === 'success' && resData.image) {
                     // 存入全域變數
                     currentBase64 = resData.image;
-                    currentImageUrl = resData.publicUrl; 
+                    // 檢查後端是否有回傳網址
+                if (resData.publicUrl) {
+                    currentImageUrl = resData.publicUrl;
+                    console.log("分享網址已就緒: ", currentImageUrl);
+                } else {
+                    console.warn("後端儲存成功，但未回傳公開網址");
+                } 
 
                     // 顯示圖片
                     resultImg.src = 'data:image/jpeg;base64,' + currentBase64;
