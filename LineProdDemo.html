@@ -105,12 +105,14 @@
 
                 const resData = await response.json();
                 
-                if (resData.status === 'success') {
-                    resultImg.src = 'data:image/jpeg;base64,' + resData.image;
-                    resultImg.style.display = 'block';
-                } else {
-                    alert('合成失敗: ' + resData.error);
-                }
+if (resData.status === 'success' && resData.image) {
+    // 只有成功且有圖片資料時才賦值
+    resultImg.src = 'data:image/jpeg;base64,' + resData.image;
+    resultImg.style.display = 'block';
+} else {
+    // 失敗時顯示文字，不要強行轉圖片
+    alert('失敗：' + (resData.error || '未知錯誤'));
+}
             } catch (err) {
                 alert('系統錯誤，請檢查 GAS 部署是否設為「任何人」');
                 console.error(err);
