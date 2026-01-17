@@ -41,6 +41,12 @@
         </div>
 
         <img id="resultImg" alt="合成結果">
+
+        <div id="actionButtons" style="display:none; margin-top: 20px; gap: 10px;">
+            <button id="downloadBtn" style="flex: 1; padding: 12px; background: #333; color: white; border: none; border-radius: 6px;">⬇️ 下載圖片</button>
+            <button id="shareBtn" style="flex: 1; padding: 12px; background: #00B900; color: white; border: none; border-radius: 6px;">LINE 分享</button>
+        </div>
+        <p id="iosHint" style="display:none; font-size: 12px; color: #888; text-align: center; margin-top: 5px;">iOS 使用者請長按圖片儲存</p>
     </div>
 
     <script>
@@ -79,51 +85,95 @@
             });
         }
 
-submitBtn.onclick = async () => {
-    const pFile = document.getElementById('productInput').files[0];
-    const lFile = document.getElementById('logoInput').files[0];
-    if (!pFile || !lFile) return alert('請上傳產品照片與 Logo');
+        submitBtn.onclick = async () => {
+        const pFile = document.getElementById('productInput').files[0];
+        const lFile = document.getElementById('logoInput').files[0];
+        if (!pFile || !lFile) return alert('請上傳產品照片與 Logo');
+    
+        // 開啟 Loading，關閉按鈕
+        submitBtn.disabled = true;
+        loading.style.display = 'block';
+        resultImg.style.display = 'none';
 
-    // 開啟 Loading，關閉按鈕
-    submitBtn.disabled = true;
-    loading.style.display = 'block';
-    resultImg.style.display = 'none';
-
-    try {
-        const pBase64 = await processImage(pFile);
-        const lBase64 = await processImage(lFile);
-
-        const response = await fetch(GAS_WEB_APP_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                productImage: pBase64,
-                logoImage: lBase64,
-                prompt: document.getElementById('promptInput').value
-            })
-        });
-
-        const resData = await response.json();
-        console.log("收到的回應：", resData);
-
-        if (resData.status === 'success' && resData.image) {
-            // 🎊 成功顯示圖片
-            // 這裡必須加上 data:image/jpeg;base64, 前綴
-            resultImg.src = 'data:image/jpeg;base64,' + resData.image;
-            resultImg.style.display = 'block';
-            
-            // 滾動到圖片位置，讓使用者看到結果
-            resultImg.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            alert('合成失敗：' + (resData.error || 'AI 未能回傳影像'));
-        }
-    } catch (err) {
-        console.error("前端錯誤：", err);
-        alert('連線逾時或網路錯誤，請稍後再試。');
-    } finally {
-        submitBtn.disabled = false;
-        loading.style.display = 'none';
-    }
-};
+        try {
+                const pBase64 = await processImage(pFile);
+                const lBase64 = await processImage(lFile);
+        
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        productImage: pBase64,
+                        logoImage: lBase64,
+                        prompt: document.getElementById('promptInput').value
+                    })
+                });
+        
+                const resData = await response.json();
+                console.log("收到的回應：", resData);
+        
+				let currentImageUrl = ""; // 儲存公開網址
+				let currentBase64 = "";   // 儲存 Base64
+				
+				// 在 resData.status === 'success' 的邏輯內加入：
+				if (resData.status === 'success' && resData.image) {
+				    currentBase64 = resData.image;
+				    currentImageUrl = resData.publicUrl; // 來自後端
+				
+				    resultImg.src = 'data:image/jpeg;base64,' + currentBase64;
+				    resultImg.style.display = 'block';
+				    
+				    // 顯示按鈕
+				    document.getElementById('actionButtons').style.display = 'flex';
+				    document.getElementById('iosHint').style.display = 'block';
+				}
+                    
+                    // 滾動到圖片位置，讓使用者看到結果
+                    resultImg.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('合成失敗：' + (resData.error || 'AI 未能回傳影像'));
+                }
+            } catch (err) {
+                console.error("前端錯誤：", err);
+                alert('連線逾時或網路錯誤，請稍後再試。');
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        	};
+		// --- 下載功能 ---
+		document.getElementById('downloadBtn').onclick = () => {
+		    const byteCharacters = atob(currentBase64);
+		    const byteNumbers = new Array(byteCharacters.length);
+		    for (let i = 0; i < byteCharacters.length; i++) {
+		        byteNumbers[i] = byteCharacters.charCodeAt(i);
+		    }
+		    const blob = new Blob([new Uint8Array(byteNumbers)], {type: 'image/jpeg'});
+		    const link = document.createElement('a');
+		    link.href = URL.createObjectURL(blob);
+		    link.download = 'AI_Design_Result.jpg';
+		    link.click();
+		};
+		
+		// --- LINE 分享功能 ---
+		document.getElementById('shareBtn').onclick = async () => {
+		    if (!liff.isApiAvailable('shareTargetPicker')) {
+		        return alert('請在 LINE App 內使用分享功能');
+		    }
+		    try {
+		        await liff.shareTargetPicker([
+		            {
+		                "type": "image",
+		                "originalContentUrl": currentImageUrl,
+		                "previewImageUrl": currentImageUrl
+		            }
+		        ]);
+		        alert('分享成功！');
+		    } catch (error) {
+		        console.error("分享失敗", error);
+		        alert('分享已取消');
+		    }
+		};
+		
     </script>
 </body>
 </html>
