@@ -2,27 +2,118 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI 商品合成助手</title>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; }
-        input[type="file"], textarea { width: 100%; margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-        #submitBtn { width: 100%; padding: 15px; background: #00B900; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        #submitBtn:disabled { background: #ccc; }
-        #loading { display: none; text-align: center; margin-top: 20px; color: #555; }
-        #resultImg { width: 100%; border-radius: 8px; display: none; margin-top: 20px; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00B900; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto; }
+        /* 基礎 RWD 設定 */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            padding: 15px; 
+            background: #f0f2f5; 
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .card { 
+            background: white; 
+            padding: 24px; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+            width: 100%;
+            max-width: 500px; /* 電腦版不會太寬，手機版自動填滿 */
+        }
+
+        h2 { margin-top: 0; color: #1a1a1a; font-size: 1.5rem; text-align: center; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #444; font-size: 0.95rem; }
+        
+        input[type="file"], textarea { 
+            width: 100%; 
+            margin-bottom: 20px; 
+            padding: 12px; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 10px; 
+            background: #fafafa;
+            font-size: 1rem;
+        }
+
+        #submitBtn { 
+            width: 100%; 
+            padding: 16px; 
+            background: #00B900; 
+            color: white; 
+            border: none; 
+            border-radius: 10px; 
+            font-size: 1.1rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: background 0.2s;
+        }
+        #submitBtn:active { background: #009900; transform: scale(0.98); }
+        #submitBtn:disabled { background: #ccc; cursor: not-allowed; }
+
+        #loading { display: none; text-align: center; margin-top: 25px; color: #666; }
+        
+        /* 圖片結果 RWD */
+        #resultImg { 
+            width: 100%; 
+            height: auto;
+            aspect-ratio: 1 / 1; 
+            border-radius: 12px; 
+            display: none; 
+            margin-top: 24px; 
+            object-fit: cover;
+            /* 關鍵：強制手機啟動長按選單 */
+            -webkit-touch-callout: default !important;
+            pointer-events: auto !important;
+            user-select: auto !important;
+        }
+
+        #actionButtons { display: none; margin-top: 20px; gap: 12px; flex-wrap: wrap; }
+        .btn-secondary { 
+            flex: 1; 
+            min-width: 140px; 
+            padding: 14px; 
+            border-radius: 10px; 
+            border: none; 
+            font-weight: 600; 
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        #downloadBtn { background: #333; color: white; }
+        #shareBtn { background: #00B900; color: white; }
+
+        #iosHint { 
+            display: none; 
+            font-size: 0.85rem; 
+            color: #888; 
+            text-align: center; 
+            margin-top: 12px; 
+            line-height: 1.4;
+        }
+
+        .spinner { 
+            border: 4px solid #f3f3f3; border-top: 4px solid #00B900; 
+            border-radius: 50%; width: 35px; height: 35px; 
+            animation: spin 1s linear infinite; margin: 10px auto; 
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 小螢幕微調 */
+        @media (max-width: 380px) {
+            .card { padding: 16px; }
+            h2 { font-size: 1.25rem; }
+            #actionButtons { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>🎨 AI 商品合成</h2>
+        <h2>🎨 AI 商品合成助手</h2>
         
         <label>1. 產品主體照片</label>
         <input type="file" id="productInput" accept="image/*">
@@ -30,152 +121,119 @@
         <label>2. Logo 或圖騰</label>
         <input type="file" id="logoInput" accept="image/*">
         
-        <label>3. 合成需求 (Prompt)</label>
-        <textarea id="promptInput" rows="3" placeholder="例如：將 Logo 自然地貼在瓶身正面，要有金屬質感..."></textarea>
+        <label>3. 合成需求</label>
+        <textarea id="promptInput" rows="2" placeholder="例如：將瓶身貼上黑色 Logo..."></textarea>
         
         <button id="submitBtn">開始合成</button>
 
         <div id="loading">
             <div class="spinner"></div>
-            <p>AI 正在努力合成中，請稍候約 15-20 秒...</p>
+            <p>AI 正在努力合成中...</p>
         </div>
 
         <img id="resultImg" alt="合成結果">
 
-        <div id="actionButtons" style="display:none; margin-top: 20px; gap: 10px;">
-            <button id="downloadBtn" style="flex: 1; padding: 12px; background: #333; color: white; border: none; border-radius: 6px;">⬇️ 下載圖片</button>
-            <button id="shareBtn" style="flex: 1; padding: 12px; background: #00B900; color: white; border: none; border-radius: 6px;">LINE 分享</button>
+        <div id="actionButtons">
+            <button id="downloadBtn" class="btn-secondary">⬇️ 下載提示</button>
+            <button id="shareBtn" class="btn-secondary">LINE 分享</button>
         </div>
-        <p id="iosHint" style="display:none; font-size: 12px; color: #888; text-align: center; margin-top: 5px;">iOS 使用者請長按圖片儲存</p>
+        <p id="iosHint"></p>
     </div>
 
-<script>
-    // ==========================================
-    // ⚠️ 基礎參數 (請確保與您的圖 6 一致)
-    // ==========================================
-    const MY_LIFF_ID = "2008894056-few4uzMm"; 
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynXv6q131cFdR4ARBc7pnFwUZ0fX0AriqXlPhAxvYyUd3eHZCrHXIaiYUcFO8J2acV/exec";
+    <script>
+        const MY_LIFF_ID = "2008894056-few4uzMm"; 
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynXv6q131cFdR4ARBc7pnFwUZ0fX0AriqXlPhAxvYyUd3eHZCrHXIaiYUcFO8J2acV/exec";
 
-    // 使用全域變數儲存
-    window.currentImageUrl = ""; 
+        window.currentImageUrl = ""; 
 
-    const submitBtn = document.getElementById('submitBtn');
-    const loading = document.getElementById('loading');
-    const resultImg = document.getElementById('resultImg');
-    const actionButtons = document.getElementById('actionButtons');
-    const iosHint = document.getElementById('iosHint');
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const resultImg = document.getElementById('resultImg');
+        const actionButtons = document.getElementById('actionButtons');
+        const iosHint = document.getElementById('iosHint');
 
-    // 1. 初始化 LIFF
-    async function initLiff() {
-        try {
-            await liff.init({ liffId: MY_LIFF_ID });
-            if (!liff.isLoggedIn()) {
-                liff.login();
-            }
-            console.log("LIFF 初始化成功");
-        } catch (err) {
-            console.error('LIFF 初始化失敗', err);
+        async function initLiff() {
+            try {
+                await liff.init({ liffId: MY_LIFF_ID });
+                if (!liff.isLoggedIn()) liff.login();
+            } catch (err) { console.error('LIFF Error', err); }
         }
-    }
-    initLiff();
+        initLiff();
 
-    // 2. 圖片壓縮邏輯
-    async function processImage(file) {
-        const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1024, useWebWorker: true };
-        const compressedFile = await imageCompression(file, options);
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result.split(',')[1]); 
-            reader.readAsDataURL(compressedFile);
-        });
-    }
-
-    // 3. 開始合成邏輯
-    submitBtn.onclick = async () => {
-        const pFile = document.getElementById('productInput').files[0];
-        const lFile = document.getElementById('logoInput').files[0];
-        if (!pFile || !lFile) return alert('請先選擇兩張照片');
-        
-        // UI 狀態切換
-        submitBtn.disabled = true;
-        loading.style.display = 'block';
-        resultImg.style.display = 'none';
-        actionButtons.style.display = 'none';
-        iosHint.style.display = 'none';
-
-        try {
-            const pBase64 = await processImage(pFile);
-            const lBase64 = await processImage(lFile);
-            
-            const response = await fetch(GAS_WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    productImage: pBase64,
-                    logoImage: lBase64,
-                    prompt: document.getElementById('promptInput').value
-                })
+        async function processImage(file) {
+            const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1024, useWebWorker: true };
+            const compressedFile = await imageCompression(file, options);
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]); 
+                reader.readAsDataURL(compressedFile);
             });
+        }
+
+        submitBtn.onclick = async () => {
+            const pFile = document.getElementById('productInput').files[0];
+            const lFile = document.getElementById('logoInput').files[0];
+            if (!pFile || !lFile) return alert('請選擇照片');
             
-            const resData = await response.json();
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            resultImg.style.display = 'none';
+            actionButtons.style.display = 'none';
+            iosHint.style.display = 'none';
 
-            if (resData.status === 'success') {
-                // 【核心修正 1】優先獲取 ImgBB 網址
-                if (resData.publicUrl) {
-                    window.currentImageUrl = resData.publicUrl;
-                    // 將 src 設為真實網址，這才能讓「長按儲存」生效
-                    resultImg.src = window.currentImageUrl;
-                } else {
-                    // 備援方案：顯示 Base64
-                    resultImg.src = 'data:image/jpeg;base64,' + resData.image;
-                }
-
-                resultImg.style.display = 'block';
-                actionButtons.style.display = 'flex';
-                iosHint.style.display = 'block';
-                iosHint.innerHTML = "✨ 合成成功！<br><b>請「長按圖片」選擇「儲存圖片」。</b>";
+            try {
+                const pBase64 = await processImage(pFile);
+                const lBase64 = await processImage(lFile);
                 
-                resultImg.scrollIntoView({ behavior: 'smooth' });
-            } else {
-                alert('合成失敗：' + (resData.error || 'AI 回傳異常'));
-            }
-        } catch (err) {
-            alert('系統忙碌，請重新操作。');
-            console.error(err);
-        } finally {
-            submitBtn.disabled = false;
-            loading.style.display = 'none';
-        }
-    };
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        productImage: pBase64,
+                        logoImage: lBase64,
+                        prompt: document.getElementById('promptInput').value
+                    })
+                });
+                
+                const resData = await response.json();
 
-    // 4. 下載按鈕 (因應 LINE 環境改為提示)
-    document.getElementById('downloadBtn').onclick = () => {
-        alert('LINE 不支援直接下載，請直接「長按上方圖片」並選擇「儲存圖片」即可！');
-    };
-    
-    // 5. 【核心修正 2】暴力式分享邏輯
-    document.getElementById('shareBtn').onclick = async () => {
-        // 先檢查網址變數
-        if (!window.currentImageUrl || window.currentImageUrl === "") {
-            return alert('分享網址尚未就緒，請等圖片載入完成再按一次。');
-        }
-
-        // 直接嘗試呼叫分享，不作環境檢查
-        try {
-            const result = await liff.shareTargetPicker([
-                {
-                    "type": "image",
-                    "originalContentUrl": window.currentImageUrl,
-                    "previewImageUrl": window.currentImageUrl
+                if (resData.status === 'success' && resData.image) {
+                    // 優先使用 ImgBB 網址以支援長按儲存
+                    window.currentImageUrl = resData.publicUrl || "";
+                    resultImg.src = window.currentImageUrl || ('data:image/jpeg;base64,' + resData.image);
+                    
+                    resultImg.style.display = 'block';
+                    actionButtons.style.display = 'flex';
+                    iosHint.style.display = 'block';
+                    iosHint.innerHTML = "✨ 合成成功！<br><b>請長按上方圖片儲存至相簿</b>";
+                    
+                    resultImg.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert('失敗：' + (resData.error || 'AI 回傳異常'));
                 }
-            ]);
-            if (result) {
-                console.log("分享視窗關閉");
+            } catch (err) {
+                alert('連線逾時，請再試一次。');
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
             }
-        } catch (error) {
-            // 如果失敗，彈出具體的錯誤訊息，讓我們知道原因
-            alert('分享失敗原因: ' + JSON.stringify(error));
-        }
-    };
-</script>
+        };
+
+        document.getElementById('downloadBtn').onclick = () => {
+            alert('因 LINE 系統限制，請直接「長按上方圖片」並選擇「儲存圖片」即可！');
+        };
+        
+        document.getElementById('shareBtn').onclick = async () => {
+            if (!window.currentImageUrl) return alert('連結產生中，請稍候');
+            try {
+                await liff.shareTargetPicker([
+                    {
+                        "type": "image",
+                        "originalContentUrl": window.currentImageUrl,
+                        "previewImageUrl": window.currentImageUrl
+                    }
+                ]);
+            } catch (error) { console.error(error); }
+        };
+    </script>
 </body>
 </html>
