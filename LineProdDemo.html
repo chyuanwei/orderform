@@ -7,106 +7,41 @@
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
     <style>
-        /* 基礎 RWD 設定 */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            padding: 15px; 
-            background: #f0f2f5; 
-            margin: 0;
-            display: flex;
-            justify-content: center;
-        }
-        
-        .card { 
-            background: white; 
-            padding: 24px; 
-            border-radius: 16px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
-            width: 100%;
-            max-width: 500px; /* 電腦版不會太寬，手機版自動填滿 */
-        }
-
+        body { font-family: -apple-system, sans-serif; padding: 15px; background: #f0f2f5; margin: 0; display: flex; justify-content: center; }
+        .card { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 500px; }
         h2 { margin-top: 0; color: #1a1a1a; font-size: 1.5rem; text-align: center; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; color: #444; font-size: 0.95rem; }
-        
-        input[type="file"], textarea { 
-            width: 100%; 
-            margin-bottom: 20px; 
-            padding: 12px; 
-            border: 1px solid #e0e0e0; 
-            border-radius: 10px; 
-            background: #fafafa;
-            font-size: 1rem;
-        }
-
-        #submitBtn { 
-            width: 100%; 
-            padding: 16px; 
-            background: #00B900; 
-            color: white; 
-            border: none; 
-            border-radius: 10px; 
-            font-size: 1.1rem; 
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: background 0.2s;
-        }
-        #submitBtn:active { background: #009900; transform: scale(0.98); }
-        #submitBtn:disabled { background: #ccc; cursor: not-allowed; }
-
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #444; }
+        input[type="file"], textarea { width: 100%; margin-bottom: 20px; padding: 12px; border: 1px solid #e0e0e0; border-radius: 10px; font-size: 1rem; }
+        #submitBtn { width: 100%; padding: 16px; background: #00B900; color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+        #submitBtn:disabled { background: #ccc; }
         #loading { display: none; text-align: center; margin-top: 25px; color: #666; }
         
-        /* 圖片結果 RWD */
-        #resultImg { 
-            width: 100%; 
-            height: auto;
-            aspect-ratio: 1 / 1; 
-            border-radius: 12px; 
-            display: none; 
-            margin-top: 24px; 
-            object-fit: cover;
-            /* 關鍵：強制手機啟動長按選單 */
-            -webkit-touch-callout: default !important;
-            pointer-events: auto !important;
-            user-select: auto !important;
-        }
-
-        #actionButtons { display: none; margin-top: 20px; gap: 12px; flex-wrap: wrap; }
-        .btn-secondary { 
-            flex: 1; 
-            min-width: 140px; 
-            padding: 14px; 
+        #resultImg { width: 100%; border-radius: 12px; display: none; margin-top: 24px; -webkit-touch-callout: default; }
+        
+        /* RWD 按鈕組排版 */
+        #actionButtons { display: none; margin-top: 20px; gap: 10px; flex-wrap: wrap; }
+        .btn-action { 
+            flex: 1 1 calc(50% - 10px); /* 預設一列兩個 */
+            padding: 14px 8px; 
             border-radius: 10px; 
             border: none; 
             font-weight: 600; 
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
+            text-align: center;
         }
         #downloadBtn { background: #333; color: white; }
         #shareBtn { background: #00B900; color: white; }
+        #copyUrlBtn { background: #555; color: white; }
+        #openInLineBtn { background: #00B900; color: white; flex: 1 1 100%; } /* 跳轉按鈕佔滿整行 */
 
-        #iosHint { 
-            display: none; 
-            font-size: 0.85rem; 
-            color: #888; 
-            text-align: center; 
-            margin-top: 12px; 
-            line-height: 1.4;
-        }
-
-        .spinner { 
-            border: 4px solid #f3f3f3; border-top: 4px solid #00B900; 
-            border-radius: 50%; width: 35px; height: 35px; 
-            animation: spin 1s linear infinite; margin: 10px auto; 
-        }
+        #iosHint { display: none; font-size: 0.85rem; color: #888; text-align: center; margin-top: 12px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00B900; border-radius: 50%; width: 35px; height: 35px; animation: spin 1s linear infinite; margin: 10px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 小螢幕微調 */
         @media (max-width: 380px) {
-            .card { padding: 16px; }
-            h2 { font-size: 1.25rem; }
-            #actionButtons { flex-direction: column; }
+            .btn-action { flex: 1 1 100%; } /* 極小螢幕時全部垂直排列 */
         }
     </style>
 </head>
@@ -122,7 +57,7 @@
         <input type="file" id="logoInput" accept="image/*">
         
         <label>3. 合成需求</label>
-        <textarea id="promptInput" rows="2" placeholder="例如：將瓶身貼上黑色 Logo..."></textarea>
+        <textarea id="promptInput" rows="2" placeholder="發揮創意，結合它們..."></textarea>
         
         <button id="submitBtn">開始合成</button>
 
@@ -134,8 +69,10 @@
         <img id="resultImg" alt="合成結果">
 
         <div id="actionButtons">
-            <button id="downloadBtn" class="btn-secondary">⬇️ 下載提示</button>
-            <button id="shareBtn" class="btn-secondary">LINE 分享</button>
+            <button id="downloadBtn" class="btn-action">⬇️ 下載圖片</button>
+            <button id="shareBtn" class="btn-action">📢 LINE 分享</button>
+            <button id="copyUrlBtn" class="btn-action">🔗 複製網址</button>
+            <button id="openInLineBtn" class="btn-action">🚀 打開 LINE 使用</button>
         </div>
         <p id="iosHint"></p>
     </div>
@@ -145,21 +82,31 @@
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynXv6q131cFdR4ARBc7pnFwUZ0fX0AriqXlPhAxvYyUd3eHZCrHXIaiYUcFO8J2acV/exec";
 
         window.currentImageUrl = ""; 
+        window.isInLine = false;
 
-        const submitBtn = document.getElementById('submitBtn');
-        const loading = document.getElementById('loading');
-        const resultImg = document.getElementById('resultImg');
-        const actionButtons = document.getElementById('actionButtons');
-        const iosHint = document.getElementById('iosHint');
+        const elements = {
+            submitBtn: document.getElementById('submitBtn'),
+            loading: document.getElementById('loading'),
+            resultImg: document.getElementById('resultImg'),
+            actionButtons: document.getElementById('actionButtons'),
+            iosHint: document.getElementById('iosHint'),
+            shareBtn: document.getElementById('shareBtn'),
+            copyUrlBtn: document.getElementById('copyUrlBtn'),
+            openInLineBtn: document.getElementById('openInLineBtn'),
+            downloadBtn: document.getElementById('downloadBtn')
+        };
 
+        // 1. 初始化 LIFF
         async function initLiff() {
             try {
                 await liff.init({ liffId: MY_LIFF_ID });
+                window.isInLine = liff.isInClient(); // 環境判定
                 if (!liff.isLoggedIn()) liff.login();
-            } catch (err) { console.error('LIFF Error', err); }
+            } catch (err) { console.error('LIFF Init Error', err); }
         }
         initLiff();
 
+        // 2. 圖片處理
         async function processImage(file) {
             const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1024, useWebWorker: true };
             const compressedFile = await imageCompression(file, options);
@@ -170,16 +117,17 @@
             });
         }
 
-        submitBtn.onclick = async () => {
+        // 3. 開始合成
+        elements.submitBtn.onclick = async () => {
             const pFile = document.getElementById('productInput').files[0];
             const lFile = document.getElementById('logoInput').files[0];
             if (!pFile || !lFile) return alert('請選擇照片');
             
-            submitBtn.disabled = true;
-            loading.style.display = 'block';
-            resultImg.style.display = 'none';
-            actionButtons.style.display = 'none';
-            iosHint.style.display = 'none';
+            elements.submitBtn.disabled = true;
+            elements.loading.style.display = 'block';
+            elements.resultImg.style.display = 'none';
+            elements.actionButtons.style.display = 'none';
+            elements.iosHint.style.display = 'none';
 
             try {
                 const pBase64 = await processImage(pFile);
@@ -196,34 +144,65 @@
                 
                 const resData = await response.json();
 
-                if (resData.status === 'success' && resData.image) {
-                    // 優先使用 ImgBB 網址以支援長按儲存
+                if (resData.status === 'success') {
                     window.currentImageUrl = resData.publicUrl || "";
-                    resultImg.src = window.currentImageUrl || ('data:image/jpeg;base64,' + resData.image);
+                    elements.resultImg.src = window.currentImageUrl || ('data:image/jpeg;base64,' + resData.image);
+                    elements.resultImg.style.display = 'block';
                     
-                    resultImg.style.display = 'block';
-                    actionButtons.style.display = 'flex';
-                    iosHint.style.display = 'block';
-                    iosHint.innerHTML = "✨ 合成成功！<br><b>請長按上方圖片儲存至相簿</b>";
-                    
-                    resultImg.scrollIntoView({ behavior: 'smooth' });
+                    // --- 環境差異化 UI ---
+                    elements.actionButtons.style.display = 'flex';
+                    if (window.isInLine) {
+                        // LINE 內環境
+                        elements.shareBtn.style.display = 'block';
+                        elements.openInLineBtn.style.display = 'none';
+                        elements.iosHint.style.display = 'block';
+                        elements.iosHint.innerHTML = "✨ 合成成功！<br><b>LINE 內請「長按圖片」儲存。</b>";
+                        elements.downloadBtn.innerText = "⬇️ 下載提示";
+                    } else {
+                        // 外部瀏覽器環境
+                        elements.shareBtn.style.display = 'none';
+                        elements.openInLineBtn.style.display = 'block';
+                        elements.iosHint.style.display = 'none';
+                        elements.downloadBtn.innerText = "⬇️ 下載圖片";
+                    }
+                    elements.resultImg.scrollIntoView({ behavior: 'smooth' });
                 } else {
-                    alert('失敗：' + (resData.error || 'AI 回傳異常'));
+                    alert('失敗：' + resData.error);
                 }
-            } catch (err) {
-                alert('連線逾時，請再試一次。');
-            } finally {
-                submitBtn.disabled = false;
-                loading.style.display = 'none';
-            }
+            } catch (err) { alert('系統忙碌中'); }
+            finally { elements.submitBtn.disabled = false; elements.loading.style.display = 'none'; }
         };
 
-        document.getElementById('downloadBtn').onclick = () => {
-            alert('因 LINE 系統限制，請直接「長按上方圖片」並選擇「儲存圖片」即可！');
+        // 4. 下載功能
+        elements.downloadBtn.onclick = () => {
+            if (window.isInLine) {
+                alert('請直接「長按上方圖片」並選擇「儲存圖片」即可！');
+            } else {
+                const link = document.createElement('a');
+                link.href = elements.resultImg.src;
+                link.download = 'AI_Product_Design.jpg';
+                link.click();
+            }
         };
         
-        document.getElementById('shareBtn').onclick = async () => {
-            if (!window.currentImageUrl) return alert('連結產生中，請稍候');
+        // 5. 新增：複製網址功能
+        elements.copyUrlBtn.onclick = () => {
+            if (!window.currentImageUrl) return alert('請先生成圖片');
+            navigator.clipboard.writeText(window.currentImageUrl).then(() => {
+                alert('圖片網址已複製！您可以直接貼給朋友。');
+            }).catch(err => {
+                alert('複製失敗，網址為：' + window.currentImageUrl);
+            });
+        };
+
+        // 6. 新增：跳轉回 LINE 功能
+        elements.openInLineBtn.onclick = () => {
+            window.location.href = "https://liff.line.me/" + MY_LIFF_ID;
+        };
+
+        // 7. LINE 分享功能
+        elements.shareBtn.onclick = async () => {
+            if (!window.currentImageUrl) return alert('網址產生中');
             try {
                 await liff.shareTargetPicker([
                     {
