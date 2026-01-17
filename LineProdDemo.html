@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 商品合成助手</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="file"], textarea { width: 100%; margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        #submitBtn { width: 100%; padding: 15px; background: #00B900; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        #submitBtn:disabled { background: #ccc; }
+        #loading { display: none; text-align: center; margin-top: 20px; color: #555; }
+        #resultImg { width: 100%; border-radius: 8px; display: none; margin-top: 20px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00B900; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>🎨 AI 商品合成</h2>
+        
+        <label>1. 產品主體照片</label>
+        <input type="file" id="productInput" accept="image/*">
+        
+        <label>2. Logo 或圖騰</label>
+        <input type="file" id="logoInput" accept="image/*">
+        
+        <label>3. 合成需求 (Prompt)</label>
+        <textarea id="promptInput" rows="3" placeholder="例如：將 Logo 自然地貼在瓶身正面，要有金屬質感..."></textarea>
+        
+        <button id="submitBtn">開始合成</button>
+
+        <div id="loading">
+            <div class="spinner"></div>
+            <p>AI 正在努力合成中，請稍候約 15-20 秒...</p>
+        </div>
+
+        <img id="resultImg" alt="合成結果">
+    </div>
+
+    <script>
+        // ==========================================
+        // ⚠️ 請填入您的資訊
+        // ==========================================
+        const MY_LIFF_ID = "2008894056-few4uzMm"; // 在 LINE Developers 取得
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynXv6q131cFdR4ARBc7pnFwUZ0fX0AriqXlPhAxvYyUd3eHZCrHXIaiYUcFO8J2acV/exec"; // 就是剛才部署得到的網址
+        // ==========================================
+
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const resultImg = document.getElementById('resultImg');
+
+        // 初始化 LIFF
+        async function initLiff() {
+            try {
+                await liff.init({ liffId: MY_LIFF_ID });
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                }
+            } catch (err) {
+                console.error('LIFF 初始化失敗', err);
+            }
+        }
+        initLiff();
+
+        // 圖片壓縮並轉 Base64
+        async function processImage(file) {
+            const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1024, useWebWorker: true };
+            const compressedFile = await imageCompression(file, options);
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]); // 只要 Base64 資料部分
+                reader.readAsDataURL(compressedFile);
+            });
+        }
+
+        submitBtn.onclick = async () => {
+            const pFile = document.getElementById('productInput').files[0];
+            const lFile = document.getElementById('logoInput').files[0];
+            if (!pFile || !lFile) return alert('請上傳兩張圖片');
+
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            resultImg.style.display = 'none';
+
+            try {
+                // 1. 處理圖片
+                const pBase64 = await processImage(pFile);
+                const lBase64 = await processImage(lFile);
+
+                // 2. 傳送至 GAS (使用 POST)
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        productImage: pBase64,
+                        logoImage: lBase64,
+                        prompt: document.getElementById('promptInput').value
+                    })
+                });
+
+                const resData = await response.json();
+                
+                if (resData.status === 'success') {
+                    resultImg.src = 'data:image/jpeg;base64,' + resData.image;
+                    resultImg.style.display = 'block';
+                } else {
+                    alert('合成失敗: ' + resData.error);
+                }
+            } catch (err) {
+                alert('系統錯誤，請檢查 GAS 部署是否設為「任何人」');
+                console.error(err);
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html>
