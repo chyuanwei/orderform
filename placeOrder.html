@@ -53,6 +53,10 @@
                 <label class="form-label">預計出貨日期<span class="req">*</span></label>
                 <input type="date" class="form-control" id="shipDate" required>
             </div>
+            <div class="mb-3">
+                <label class="form-label">備註</label>
+                <textarea class="form-control" id="remark" rows="2" placeholder="如有特殊需求請在此註明"></textarea>
+            </div>
 
             <div class="section-title">訂購項目<span class="req">*</span></div>
             <div id="itemList"></div>
@@ -159,7 +163,6 @@
                     count: row.querySelector('.product-count').value
                 });
             });
-            // 取得 URL 中的參數
             const urlParams = new URLSearchParams(window.location.search);
             const botIdFromUrl = urlParams.get('botId') || "LIFF_DEFAULT";
             currentPayload = {
@@ -168,6 +171,7 @@
                 shopName: document.getElementById('shopName').value,
                 ordererName: document.getElementById('ordererName').value,
                 shipDate: document.getElementById('shipDate').value,
+                remark: document.getElementById('remark').value, // 取得備註內容
                 items: items,
                 userId: userProfile ? userProfile.userId : ""
             };
@@ -184,6 +188,7 @@
         document.getElementById(elementId).innerHTML = `
             <div class="mb-2 small"><b>店家：</b>${currentPayload.shopName}</div>
             <div class="mb-2 small"><b>出貨日：</b>${currentPayload.shipDate}</div>
+            <div class="mb-2 small"><b>備註：</b>${currentPayload.remark || '無'}</div>
             <div class="mb-3 small border-bottom pb-2"><b>訂購人：</b>${currentPayload.ordererName}</div>
             <div>${itemsHtml}</div>
         `;
@@ -193,7 +198,6 @@ async function handleFinalSubmit() {
         const overlay = document.getElementById('loadingOverlay');
         overlay.style.display = 'flex';
 
-        // 1. 先發送資料到 GAS (不等待回應)
         fetch(GAS_URL, {
             method: "POST",
             headers: { "Content-Type": "text/plain" },
@@ -202,27 +206,22 @@ async function handleFinalSubmit() {
             .then(data => console.log("GAS 回應:", data))
             .catch(err => console.error("傳送失敗:", err));
 
-        // 2. 顯示成功畫面 (Step 3)
         setTimeout(async () => {
             overlay.style.display = 'none';
             renderSummary('resultSummary');
-            switchStep(2, 3); // 切換到 Step 3 成功畫面
+            switchStep(2, 3);
 
-            // 3. 處理訊息發送
             if (liff.isInClient()) {
                 const itemsMsg = currentPayload.items.map(i => `・${i.name} x ${i.count}`).join('\n');
-                const fullMsg = `【Line表單】訂單已送出：\n--------------------\n下單日期：${currentPayload.orderDate}\n店家名稱：${currentPayload.shopName}\n訂購人：${currentPayload.ordererName}\n預計出貨日：${currentPayload.shipDate}\n--------------------\n訂購明細：\n${itemsMsg}`;
+                // 訊息加入備註欄位
+                const fullMsg = `【Line表單】訂單已送出：\n--------------------\n下單日期：${currentPayload.orderDate}\n店家名稱：${currentPayload.shopName}\n訂購人：${currentPayload.ordererName}\n預計出貨日：${currentPayload.shipDate}\n備註：${currentPayload.remark || '無'}\n--------------------\n訂購明細：\n${itemsMsg}`;
 
                 try {
-                    // 使用 await 確保訊息傳送完成
                     await liff.sendMessages([{
                         type: 'text',
                         text: fullMsg
                     }]);
                     console.log("訊息傳送成功");
-                    
-                    // ⚠️ 注意：這裡不再執行 liff.closeWindow()，讓畫面停留在 Step 3
-                    
                 } catch (err) {
                     console.error("訊息傳送失敗:", err);
                     alert("訂單已記錄，但無法發送對帳訊息。");
