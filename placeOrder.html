@@ -90,7 +90,7 @@
     </div>
 </div>
 
-<script src="liff-id.js"></script>
+<script src="https://chyuanwei.github.io/orderform/liff-id.js"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
     var LIFF_ID = (function() {
@@ -107,6 +107,10 @@
     let userProfile = null;
 
     window.onload = async function() {
+        if (document.referrer && document.referrer.indexOf("2008894056") !== -1) {
+            window.location.replace("https://chyuanwei.github.io/orderform/placeOrder-test.html" + (window.location.search || ""));
+            return;
+        }
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('orderDate').value = today;
         document.getElementById('shipDate').setAttribute('min', today);
@@ -144,6 +148,12 @@
             addItemRow();
         } catch (err) {
             console.error(err);
+            var msg = (err && (err.message || err.toString())) || "";
+            if (/invalid|liff|400|mismatch/i.test(msg)) {
+                try { sessionStorage.setItem("liffId", "2008894056-few4uzMm"); } catch (e) {}
+                window.location.replace("https://chyuanwei.github.io/orderform/placeOrder-test.html" + (window.location.search || ""));
+                return;
+            }
         }
     };
 
