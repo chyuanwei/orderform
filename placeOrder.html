@@ -97,7 +97,8 @@
         var urlParams = new URLSearchParams(window.location.search);
         var fromPath = getLiffIdFromUrl(window.location.hostname, window.location.pathname, null);
         var fromQuery = urlParams.get("liffId");
-        return fromPath || fromQuery || "2008894056-few4uzMm";
+        var fromStorage = (typeof sessionStorage !== "undefined") ? sessionStorage.getItem("liffId") : null;
+        return fromPath || fromQuery || fromStorage || "2008894056-few4uzMm";
     })();
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwRDNZrsmN2yBEi35KmkpcVjN88Dtom5X7FRVhCffFeeXCWbRiDylRmbqMUV3CqX9Uz-g/exec"; 
 
@@ -114,6 +115,11 @@
             if (!LIFF_ID) { console.error("無法取得 LIFF ID"); return; }
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) {
+                try {
+                    sessionStorage.setItem("liffId", LIFF_ID);
+                    var botId = new URLSearchParams(window.location.search).get("botId");
+                    if (botId) sessionStorage.setItem("liffBotId", botId);
+                } catch (e) {}
                 liff.login();
             } else {
                 userProfile = await liff.getProfile();
@@ -172,7 +178,7 @@
                 });
             });
             const urlParams = new URLSearchParams(window.location.search);
-            const botIdFromUrl = urlParams.get('botId') || "LIFF_DEFAULT";
+            const botIdFromUrl = urlParams.get('botId') || (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("liffBotId") : null) || "LIFF_DEFAULT";
             const isPc = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             currentPayload = {
                 destination: botIdFromUrl,
