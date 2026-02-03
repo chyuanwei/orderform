@@ -17,6 +17,7 @@
 ```
 專案根目錄（= orderform 倉庫根）
 ├── index.html, placeOrder.html, manual.html, manual2.html, ...
+├── liff-id.js               # LIFF ID 從網址解析（getLiffIdFromUrl），供 index/placeOrder 使用，有 unittest
 ├── images/
 ├── README.md
 ├── .gitignore
@@ -29,7 +30,7 @@
     │   ├── .clasp.json      # 腳本 ID、rootDir（不提交 GitHub）
     │   ├── .claspignore
     │   ├── Main.js, Config.js, Utils.js, ...
-    │   └── __tests__/       # Jest 測試
+    │   └── __tests__/       # Jest：Utils.test.js、liff-id.test.js（測 getLiffIdFromUrl）
     ├── jest.config.js
     ├── jest.setup.js
     ├── package.json
@@ -68,7 +69,7 @@
 ### GAS（clasp）
 
 - **腳本 ID**：存在 `LineOrderForm/gas/.clasp.json`（不提交）。
-- **rootDir**：須指向實際 `gas` 目錄（目前為 `.../LineOrderForm/LineOrderForm/gas`）。
+- **rootDir**：須指向實際 `gas` 目錄（從專案根目錄起為 `LineOrderForm/gas`）；若換機器或目錄後 push 失敗，請檢查並修正 `.clasp.json` 內 rootDir。
 - **拉取**：`cd LineOrderForm/gas` → `npx clasp pull`
 - **推送**：`cd LineOrderForm/gas` → `npx clasp push`
 - 每次更新 GAS 程式後，依 `.cursor/rules/gas-deploy-comment.mdc` 提供 **Comment for deploy** 給使用者。
@@ -78,6 +79,7 @@
 - 執行目錄：`LineOrderForm/`（內有 `jest.config.js`）。
 - 指令：`cd LineOrderForm` → `npm test` 或 `npx jest`。
 - `jest.setup.js` 模擬 GAS 全域（SpreadsheetApp、ContentService、PropertiesService 等）。
+- 測試檔：`gas/__tests__/Utils.test.js`（returnJson、filterDebugRows）、`gas/__tests__/liff-id.test.js`（getLiffIdFromUrl，邏輯在根目錄 `liff-id.js`）。
 
 ---
 
@@ -104,8 +106,21 @@
 
 ## 7. 前端行為摘要
 
-- **index.html**：LIFF 初始化後若已登入則轉 `placeOrder.html`（只帶 `?botId=xxx`，不帶 OAuth 參數）；登入後若 init 失敗仍嘗試轉訂單頁。
-- **placeOrder.html**：以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`（botId 或 LIFF_DEFAULT）、`isPc`；產品清單為 C 欄、送出後後端轉 B 欄。
+- **liff-id.js**（根目錄）：`getLiffIdFromUrl(hostname, pathname, fallback)`。當 `hostname === "liff.line.me"` 時從 pathname 用正則 `/^\/([^/]+)(?:\/|$)/` 取 LIFF ID（支援 `/{liffId}/placeOrder.html` 與 `/{liffId}`）；非 liff.line.me 時回傳 fallback。**不 hardcode 單一 LIFF ID**，可同時支援多個 LIFF App（如 2008894056、2008892626）。有單元測試 `gas/__tests__/liff-id.test.js`。
+- **index.html**：先載入 `liff-id.js`，再 `getLiffIdFromUrl(hostname, pathname, fallback)` 取得 liffId 後 `liff.init`；已登入則轉 `placeOrder.html`（只帶 `?botId=xxx`）；init 失敗且為 OAuth callback 時仍嘗試轉訂單頁。
+- **placeOrder.html**：先載入 `liff-id.js`，再以 `getLiffIdFromUrl` 取得 LIFF_ID 後 `liff.init`；以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`、`isPc`；產品清單為 C 欄、送出後後端轉 B 欄。
+
+---
+
+## 8. 附錄：曾遇問題與注意
+
+| 狀況 | 說明／解法 |
+|------|------------|
+| **Git index.lock** | 若 `git status` 報 index.lock 錯誤，多為上次操作中斷；可關閉其他 Git 程式後刪除 `.git/index.lock`，或暫時用 `GIT_INDEX_FILE` 繞過。 |
+| **clasp push 失敗（rootDir）** | 錯誤提示 rootDir 不匹配時，編輯 `LineOrderForm/gas/.clasp.json`，將 `rootDir` 改為實際 gas 目錄路徑（例如 `LineOrderForm/gas`）。 |
+| **多 LIFF ID 共用同一頁** | 多個 LIFF App 共用 index/placeOrder 時，若 hardcode 單一 LIFF ID 會導致 init 失敗；已改為使用 `liff-id.js` 的 `getLiffIdFromUrl` 從網址解析 LIFF ID；並支援 `?liffId=xxx` 參數優先。 |
+| **index 轉 placeOrder** | 轉跳時帶 `?liffId=xxx&botId=xxx`，讓 placeOrder 在 Endpoint 載入時仍能取得正確 LIFF ID。 |
+| **LIFF 初始化錯誤（Endpoint 導向）** | 若 LINE 導向到 Endpoint（如 GitHub Pages）後網址變成 endpoint 網域，path 若無 LIFF ID 會用到 fallback 而 init 失敗。解法：(1) placeOrder 優先讀取 `?liffId=`；(2) `getLiffIdFromUrl` 在非 liff.line.me 時也會從 path 抓符合 `數字-英數字` 的 LIFF ID；(3) 每個 LIFF App 的 Endpoint URL 可設成含 ID 的路徑，例如 `.../2008892626-gElGdN7S/placeOrder.html`。 |
 
 ---
 

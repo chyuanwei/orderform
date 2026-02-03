@@ -32,11 +32,20 @@ describe("getLiffIdFromUrl", function () {
     expect(getLiffIdFromUrl("liff.line.me", "", fallback)).toBe(fallback);
   });
 
-  it("非 liff.line.me 時回傳 fallback", function () {
+  it("非 liff.line.me 且 path 無 LIFF ID 時回傳 fallback", function () {
     expect(
       getLiffIdFromUrl("chyuanwei.github.io", "/orderform/placeOrder.html", fallback)
     ).toBe(fallback);
     expect(getLiffIdFromUrl("localhost", "/placeOrder.html", fallback)).toBe(fallback);
+  });
+
+  it("非 liff.line.me 但 path 含 LIFF ID 時應回傳該 ID（Endpoint URL 含 ID 時）", function () {
+    expect(
+      getLiffIdFromUrl("chyuanwei.github.io", "/orderform/2008892626-gElGdN7S/placeOrder.html", fallback)
+    ).toBe("2008892626-gElGdN7S");
+    expect(
+      getLiffIdFromUrl("chyuanwei.github.io", "/2008894056-few4uzMm/placeOrder.html", fallback)
+    ).toBe("2008894056-few4uzMm");
   });
 
   it("fallback 為 null 時可回傳 null", function () {
