@@ -86,6 +86,7 @@
 
 | 項目 | 說明 |
 |------|------|
+| **commit and push** | 一律包含 **GitHub**（git add / commit / push）**與 GAS**（`cd LineOrderForm/gas` → `npx clasp push`），兩邊都要執行。 |
 | **GAS 更新** | 凡修改 `LineOrderForm/gas/**/*.js`，回覆結尾須附 **Comment for deploy**（見 `.cursor/rules/gas-deploy-comment.mdc`）。 |
 | **GAS 執行 vs 版本控制** | 實際執行在 GAS 平台（clasp push）；GitHub 用於版本控制、備份與協作。 |
 | **Utils.js** | 含 `filterDebugRows` 抽離供 Jest 測試；`if (typeof module...)` 區塊僅 Node 執行，GAS 不執行。 |
