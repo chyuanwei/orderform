@@ -1,0 +1,7 @@
+{
+  "description": "LIFF Endpoint URL 路徑用：每個 ID 會產生 {liffId}/placeOrder.html 導向頁。新增 LIFF App 時在此加入 ID 後執行 node generate-liff-redirects.js",
+  "liffIds": [
+    "2008892626-gElGdN7S",
+    "2008894056-few4uzMm"
+  ]
+}
