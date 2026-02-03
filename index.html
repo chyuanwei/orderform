@@ -22,20 +22,24 @@
     <script src="liff-id.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
-        var PLACE_ORDER_URL = "https://chyuanwei.github.io/orderform/placeOrder.html";
+        var fromStorage = (typeof sessionStorage !== "undefined") ? sessionStorage.getItem("liffId") : null;
+        var isTestEnv = (document.referrer && document.referrer.indexOf("2008894056") !== -1) || fromStorage === "2008894056-few4uzMm";
+        var PLACE_ORDER_URL = isTestEnv ? "https://chyuanwei.github.io/orderform/placeOrder-test.html" : "https://chyuanwei.github.io/orderform/placeOrder.html";
+        var DEFAULT_LIFF_ID = isTestEnv ? "2008894056-few4uzMm" : "2008892626-gElGdN7S";
 
         async function main() {
             var urlParams = new URLSearchParams(window.location.search);
             var hasOAuthCallback = urlParams.has("code") || urlParams.has("state");
             var fromPath = getLiffIdFromUrl(window.location.hostname, window.location.pathname, null);
             var fromQuery = urlParams.get("liffId");
-            var liffId = fromPath || fromQuery || "2008892626-gElGdN7S";
+            var liffId = fromPath || fromQuery || fromStorage || DEFAULT_LIFF_ID;
 
             try {
                 if (!liffId) { document.querySelector('p').innerText = "無法取得 LIFF ID，請從 LINE 圖文選單進入。"; return; }
                 await liff.init({ liffId: liffId });
 
                 if (!liff.isLoggedIn()) {
+                    try { sessionStorage.setItem("liffId", liffId); } catch (e) {}
                     liff.login();
                     return;
                 }

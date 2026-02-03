@@ -12,3 +12,5 @@
 |------|---------|--------------|------|
 | **正式** | 2008892626-gElGdN7S | `https://chyuanwei.github.io/orderform/` 或 `.../placeOrder.html` | placeOrder.html、index.html |
 | **測試** | 2008894056-few4uzMm | `https://chyuanwei.github.io/orderform/placeOrder-test.html` | placeOrder-test.html、index-test.html |
+
+**測試環境若出現 404 或先看到正式頁再 404**：(1) **建議**測試 LIFF 的 Endpoint URL 設為 `.../placeOrder-test.html`，不要設成根目錄。若曾設成根目錄，`index.html` 會依 referrer 或 sessionStorage 的 liffId 判斷為測試環境並導向 `placeOrder-test.html`。(2) GitHub Pages 來源為 `main`、目錄 `/ (root)`。(3) 測試頁用絕對路徑載入 `liff-id.js`。
