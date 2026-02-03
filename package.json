@@ -1,0 +1,18 @@
+{
+  "name": "line-order-form",
+  "version": "1.0.0",
+  "description": "LINE 訂單表單 - HTML (GitHub) + Google Apps Script (GAS)",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "gas:pull": "cd gas && npx clasp pull",
+    "gas:push": "cd gas && npx clasp push",
+    "gas:open": "cd gas && npx clasp open"
+  },
+  "devDependencies": {
+    "@google/clasp": "^2.4.2",
+    "jest": "^29.7.0"
+  }
+}

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI 商品合成助手</title>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, sans-serif; padding: 15px; background: #f0f2f5; margin: 0; display: flex; justify-content: center; }
+        .card { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 500px; }
+        h2 { margin-top: 0; color: #1a1a1a; font-size: 1.5rem; text-align: center; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #444; font-size: 0.9rem; }
+        input[type="file"], textarea { width: 100%; margin-bottom: 15px; padding: 12px; border: 1px solid #e0e0e0; border-radius: 10px; font-size: 1rem; background: #fafafa; }
+        
+        /* 預覽區樣式 */
+        .preview-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .preview-box { flex: 1; text-align: center; }
+        .preview-box p { font-size: 0.75rem; color: #888; margin: 5px 0 0 0; }
+        .thumb { width: 100%; aspect-ratio: 1/1; border-radius: 8px; border: 2px dashed #ddd; object-fit: cover; display: none; background: #f9f9f9; }
+
+        #submitBtn { width: 100%; padding: 16px; background: #00B900; color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+        #submitBtn:disabled { background: #ccc; }
+        #loading { display: none; text-align: center; margin-top: 25px; color: #666; }
+        #resultImg { width: 100%; border-radius: 12px; display: none; margin-top: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        
+        #actionButtons { display: none; margin-top: 20px; gap: 10px; flex-wrap: wrap; }
+        .btn-action { flex: 1 1 calc(50% - 10px); padding: 14px 8px; border-radius: 10px; border: none; font-weight: 600; font-size: 0.95rem; cursor: pointer; text-align: center; }
+        #downloadBtn { background: #333; color: white; }
+        #shareBtn { background: #00B900; color: white; }
+        #copyUrlBtn { background: #555; color: white; }
+        #openInLineBtn { background: #00B900; color: white; }
+
+        #hintText { display: none; font-size: 0.85rem; color: #888; text-align: center; margin-top: 12px; line-height: 1.5; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00B900; border-radius: 50%; width: 35px; height: 35px; animation: spin 1s linear infinite; margin: 10px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 380px) { .btn-action { flex: 1 1 100%; } }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>🎨 AI 商品合成助手</h2>
+        
+        <label>1. 上傳照片預覽</label>
+        <div class="preview-group">
+            <div class="preview-box">
+                <input type="file" id="productInput" accept="image/*" style="display:none">
+                <img id="productThumb" class="thumb" onclick="document.getElementById('productInput').click()">
+                <button type="button" onclick="document.getElementById('productInput').click()" style="width:100%; font-size:0.8rem">選擇產品圖</button>
+            </div>
+            <div class="preview-box">
+                <input type="file" id="logoInput" accept="image/*" style="display:none">
+                <img id="logoThumb" class="thumb" onclick="document.getElementById('logoInput').click()">
+                <button type="button" onclick="document.getElementById('logoInput').click()" style="width:100%; font-size:0.8rem">選擇 Logo</button>
+            </div>
+        </div>
+        
+        <label>2. 合成指令</label>
+        <textarea id="promptInput" rows="2" placeholder="請輸入合成需求..."></textarea>
+        
+        <button id="submitBtn">開始合成</button>
+
+        <div id="loading"><div class="spinner"></div><p>AI 正在合成中...</p></div>
+        <img id="resultImg" alt="合成結果">
+
+        <div id="actionButtons">
+            <button id="downloadBtn" class="btn-action">⬇️ 下載圖片</button>
+            <button id="shareBtn" class="btn-action">📢 LINE 分享</button>
+            <button id="copyUrlBtn" class="btn-action">🔗 複製網址</button>
+            <button id="openInLineBtn" class="btn-action">🚀 打開 LINE</button>
+        </div>
+        <p id="hintText"></p>
+    </div>
+
+    <script>
+        const MY_LIFF_ID = "2008894056-few4uzMm"; 
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbynXv6q131cFdR4ARBc7pnFwUZ0fX0AriqXlPhAxvYyUd3eHZCrHXIaiYUcFO8J2acV/exec";
+    
+        window.currentImageUrl = ""; 
+        window.env = { isInLine: false, os: "" };
+    
+        const el = {
+            productInput: document.getElementById('productInput'),
+            logoInput: document.getElementById('logoInput'),
+            productThumb: document.getElementById('productThumb'),
+            logoThumb: document.getElementById('logoThumb'),
+            submitBtn: document.getElementById('submitBtn'),
+            loading: document.getElementById('loading'),
+            resultImg: document.getElementById('resultImg'),
+            actionButtons: document.getElementById('actionButtons'),
+            hintText: document.getElementById('hintText'),
+            shareBtn: document.getElementById('shareBtn'),
+            copyUrlBtn: document.getElementById('copyUrlBtn'),
+            openInLineBtn: document.getElementById('openInLineBtn'),
+            downloadBtn: document.getElementById('downloadBtn')
+        };
+    
+        async function initLiff() {
+            try {
+                await liff.init({ liffId: MY_LIFF_ID });
+                window.env.isInLine = liff.isInClient();
+                window.env.os = liff.getOS();
+                if (!liff.isLoggedIn()) liff.login();
+            } catch (err) { console.error('LIFF Init Error', err); }
+        }
+        initLiff();
+    
+        function setupPreview(input, thumb) {
+            input.onchange = () => {
+                const file = input.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => { thumb.src = e.target.result; thumb.style.display = 'block'; };
+                    reader.readAsDataURL(file);
+                }
+            };
+        }
+        setupPreview(el.productInput, el.productThumb);
+        setupPreview(el.logoInput, el.logoThumb);
+    
+        async function processImage(file) {
+            const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1024, useWebWorker: true };
+            const compressedFile = await imageCompression(file, options);
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]); 
+                reader.readAsDataURL(compressedFile);
+            });
+        }
+    
+        el.submitBtn.onclick = async () => {
+            if (!el.productInput.files[0] || !el.logoInput.files[0]) return alert('請先上傳產品與 Logo 照片');
+            el.submitBtn.disabled = true; el.loading.style.display = 'block';
+            el.resultImg.style.display = 'none'; el.actionButtons.style.display = 'none'; el.hintText.style.display = 'none';
+    
+            try {
+                const pB = await processImage(el.productInput.files[0]);
+                const lB = await processImage(el.logoInput.files[0]);
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ productImage: pB, logoImage: lB, prompt: document.getElementById('promptInput').value })
+                });
+                const res = await response.json();
+    
+                if (res.status === 'success') {
+                    window.currentImageUrl = res.publicUrl || "";
+                    el.resultImg.src = window.currentImageUrl || ('data:image/jpeg;base64,' + res.image);
+                    el.resultImg.style.display = 'block';
+                    el.actionButtons.style.display = 'flex';
+    
+                    if (window.env.isInLine) {
+                        el.shareBtn.style.display = 'block'; el.openInLineBtn.style.display = 'none'; el.copyUrlBtn.style.display = 'none';
+                        el.downloadBtn.innerText = "⬇️ 下載提示";
+                        el.hintText.style.display = 'block'; el.hintText.innerHTML = "✨ 合成成功！<br><b>LINE 內請「長按圖片」儲存。</b>";
+                    } else if (window.env.os === "ios" || window.env.os === "android") {
+                        el.shareBtn.style.display = 'none'; el.openInLineBtn.style.display = 'block'; el.copyUrlBtn.style.display = 'block';
+                        el.downloadBtn.innerText = "⬇️ 下載圖片";
+                        el.hintText.style.display = 'block'; el.hintText.innerHTML = "💡 外部瀏覽器請先「複製網址」，再點擊下方按鈕開啟 LINE。";
+                    } else {
+                        el.shareBtn.style.display = 'none'; el.openInLineBtn.style.display = 'none'; el.copyUrlBtn.style.display = 'block';
+                        el.downloadBtn.innerText = "⬇️ 下載圖片";
+                        el.hintText.style.display = 'block'; el.hintText.innerHTML = "💡 PC 版請直接下載圖片或複製網址分享。";
+                    }
+                    el.resultImg.scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (err) { alert('系統忙碌'); }
+            finally { el.submitBtn.disabled = false; el.loading.style.display = 'none'; }
+        };
+    
+        el.downloadBtn.onclick = async () => {
+            if (window.env.isInLine) {
+                alert('請直接「長按上方圖片」並選擇「儲存圖片」即可！');
+            } else if (window.env.os === "ios" || window.env.os === "android") {
+                window.open(el.resultImg.src, '_blank');
+            } else {
+                try {
+                    const response = await fetch(el.resultImg.src);
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = 'AI_Design_Result.jpg';
+                    document.body.appendChild(a); a.click();
+                    window.URL.revokeObjectURL(url); document.body.removeChild(a);
+                } catch (e) { window.open(el.resultImg.src, '_blank'); }
+            }
+        };
+        
+        el.copyUrlBtn.onclick = () => {
+            if (!window.currentImageUrl) return alert('尚未生成圖片');
+            navigator.clipboard.writeText(window.currentImageUrl).then(() => alert('圖片網址已複製！'));
+        };
+    
+        // 核心修正：改用官方 https://line.me/R/ 連結，徹底解決「連結無效」報錯
+        el.openInLineBtn.onclick = () => {
+            window.location.href = "https://line.me/R/"; 
+        };
+    
+        el.shareBtn.onclick = async () => {
+            try { await liff.shareTargetPicker([{ "type": "image", "originalContentUrl": window.currentImageUrl, "previewImageUrl": window.currentImageUrl }]); }
+            catch (error) { console.error(error); }
+        };
+    </script>
+</body>
+</html>

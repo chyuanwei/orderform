@@ -1,0 +1,9 @@
+# 推送至 GAS 時忽略的檔案（clasp push 不會上傳這些）
+node_modules/
+**/*.md
+.git/
+.gitignore
+*.log
+__tests__/
+**/__tests__/**
+**/*.test.js

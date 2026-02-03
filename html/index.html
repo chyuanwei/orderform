@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>泉威食品 - 系統跳轉中</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f4f4f4; }
+        .loader { text-align: center; }
+        .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #09d; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="loader">
+        <div class="spinner"></div>
+        <p>系統跳轉中，請稍候...</p>
+    </div>
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script>
+        async function main() {
+            try {
+                // 初始化 LIFF，請確保 ID 與你的後台一致
+                await liff.init({ liffId: "2008894056-few4uzMm" });
+
+                // 檢查是否成功登入 (選用，但建議加入)
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                }
+
+                // 當 liff.init 執行完成時，SDK 會自動解析 liff.state 
+                // 如果跳轉沒有自動發生，代表可能環境不支援或設定問題
+                console.log("LIFF 初始化成功");
+
+            } catch (error) {
+                console.error("LIFF 初始化失敗", error);
+                document.querySelector('p').innerText = "系統初始化失敗，請稍後再試。";
+            }
+        }
+        main();
+    </script>
+</body>
+</html>

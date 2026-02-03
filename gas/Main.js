@@ -1,0 +1,64 @@
+/**
+ * 整合型接收中心 (doPost)
+ */
+function doPost(e) {
+   logToSheet("doPost");
+  try {
+    if (!e || !e.postData) return ContentService.createTextOutput("No Data");
+
+    const postData = e.postData.contents;
+    const data = JSON.parse(postData);
+    botId = data.destination;
+    logToSheet("botId : "+botId);
+    //OA_CONFIG = JSON.parse(PropertiesService.getScriptProperties().getProperty('OA_CONFIG_JSON'));
+    logToSheet("OA_CONFIG[botId] : "+OA_CONFIG[botId]);
+    currentConfig = (typeof OA_CONFIG !== 'undefined' && OA_CONFIG[botId]) 
+      ? OA_CONFIG[botId] 
+      : { name: '未知OA', token: '' };
+      logToSheet("currentConfig : "+currentConfig);
+    // 情境 A：來自 LINE OA 的 Webhook
+    if (data.events) {
+      logToSheet("handleLineMessage : "+data);
+      return handleLineMessage(data);
+    } 
+    
+    // 情境 B：來自 LIFF 的訂單表單
+    else if (data.items) {
+      logToSheet("handleLiffOrder : "+data);
+      return handleLiffOrder(data);
+    } 
+    
+    else {
+      return ContentService.createTextOutput("Unknown source");
+    }
+
+  } catch (err) {
+    console.error("doPost 總進入點發生錯誤: " + err.message);
+    return ContentService.createTextOutput("Error: " + err.message);
+  }
+}
+
+/**
+ * 抓取產品清單入口 (doGet)
+ */
+function doGet(e) {
+  logToSheet("doGet");
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName('Ragic 對照表'); 
+    if (!sheet) throw new Error("找不到『Ragic 對照表』分頁");
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow <= 1) return returnJson([]); 
+
+    // 產品清單改為讀取 A 欄（標準名稱），寫入 Ragic 時仍會經 getRagicNameMap 轉成 B 欄
+    const options = sheet.getRange(2, 1, lastRow - 1, 1).getValues()
+      .map(row => row[0])
+      .filter(item => item !== "" && item !== null); 
+    
+    return returnJson(options);
+  } catch (err) {
+    console.error("doGet 發生錯誤: " + err.message);
+    return returnJson({ error: err.message });
+  }
+}

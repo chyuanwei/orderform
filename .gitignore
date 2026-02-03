@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# GAS / clasp
+gas/.clasp.json
+.clasp.json
+
+# Nested repo (html 來自獨立 clone，不提交其 .git)
+html/.git/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs / temp
+*.log
+.env
+.env.local
+
+# Jest
+coverage/

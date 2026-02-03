@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>泉威食品 - 訂單系統</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; padding: 15px; font-family: "Microsoft JhengHei", sans-serif; }
+        .order-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        .section-title { border-left: 5px solid #06C755; padding-left: 10px; margin: 20px 0 15px 0; font-weight: bold; }
+        .item-row { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 10px; border: 1px solid #e9ecef; }
+        .btn-line { background-color: #06C755; color: white; border: none; font-weight: bold; }
+        .btn-line:hover { background-color: #05a346; color: white; }
+        .btn-outline-line { border: 1px solid #06C755; color: #06C755; background: white; font-weight: bold; }
+        .readonly-field { background-color: #e9ecef !important; }
+        .d-none { display: none !important; }
+        .req { color: #dc3545; margin-left: 3px; font-weight: bold; }
+        .confirm-box { background: #fdfdfd; border: 1px solid #eee; border-radius: 12px; padding: 20px; }
+        .confirm-item { font-size: 0.95rem; border-bottom: 1px dashed #ddd; padding: 8px 0; }
+        #loadingOverlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+    <div class="spinner-border text-success" role="status"></div>
+    <p class="mt-2">系統處理中...</p>
+</div>
+
+<div class="container order-container">
+    <h3 class="text-center mb-4" style="color: #06C755;">泉威食品訂購單</h3>
+    
+    <div id="step1">
+        <form id="orderForm">
+            <div class="section-title">基本資料</div>
+            <div class="mb-3">
+                <label class="form-label small text-muted">下單日期</label>
+                <input type="date" class="form-control readonly-field" id="orderDate" readonly>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">店家名稱<span class="req">*</span></label>
+                <input type="text" class="form-control" id="shopName" required placeholder="請輸入店名">
+            </div>
+            <div class="mb-3">
+                <label class="form-label small text-muted">訂購人 (LINE)</label>
+                <input type="text" class="form-control readonly-field" id="ordererName" readonly placeholder="載入中...">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">預計出貨日期<span class="req">*</span></label>
+                <input type="date" class="form-control" id="shipDate" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">備註</label>
+                <textarea class="form-control" id="remark" rows="2" placeholder="如有特殊需求請在此註明"></textarea>
+            </div>
+
+            <div class="section-title">訂購項目<span class="req">*</span></div>
+            <div id="itemList"></div>
+            <button type="button" class="btn btn-outline-line w-100 mb-4" onclick="addItemRow()">+ 增加一筆品項</button>
+
+            <button type="submit" class="btn btn-line w-100 py-3">下一步：核對內容</button>
+        </form>
+    </div>
+
+    <div id="step2" class="d-none">
+        <div class="section-title">請核對您的訂單</div>
+        <div class="confirm-box mb-4" id="confirmDetail"></div>
+        <div class="row g-2">
+            <div class="col-6">
+                <button type="button" class="btn btn-outline-secondary w-100 py-2" onclick="switchStep(2, 1)">返回修改</button>
+            </div>
+            <div class="col-6">
+                <button type="button" class="btn btn-line w-100 py-2" onclick="handleFinalSubmit()">確認送出</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="step3" class="d-none text-center">
+        <div class="py-4">
+            <div class="display-4 text-success mb-3">✅</div>
+            <h4 class="mb-4">訂單已送出成功！</h4>
+            <div class="confirm-box text-start mb-4" id="resultSummary"></div>
+            <button type="button" class="btn btn-line w-100 py-3" onclick="liff.closeWindow()">關閉視窗</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+    const LIFF_ID = "2008894056-few4uzMm"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwRDNZrsmN2yBEi35KmkpcVjN88Dtom5X7FRVhCffFeeXCWbRiDylRmbqMUV3CqX9Uz-g/exec"; 
+
+    let productOptions = [];
+    let currentPayload = null;
+    let userProfile = null;
+
+    window.onload = async function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('orderDate').value = today;
+        document.getElementById('shipDate').setAttribute('min', today);
+
+        try {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                userProfile = await liff.getProfile();
+                document.getElementById('ordererName').value = userProfile.displayName;
+            }
+
+            const resp = await fetch(GAS_URL);
+            productOptions = await resp.json();
+            addItemRow();
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    function addItemRow() {
+        const container = document.getElementById('itemList');
+        const rowId = 'row_' + Date.now() + Math.floor(Math.random() * 1000);
+        const rowHtml = `
+            <div class="item-row" id="${rowId}">
+                <div class="row g-2">
+                    <div class="col-7">
+                        <select class="form-select product-select" required>
+                            <option value="" disabled selected>請選擇品項...</option>
+                            ${productOptions.map(p => `<option value="${p}">${p}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="col-3">
+                        <input type="number" class="form-control product-count" value="1" min="1" required>
+                    </div>
+                    <div class="col-2 text-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow('${rowId}')">✕</button>
+                    </div>
+                </div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', rowHtml);
+    }
+
+    function removeRow(id) {
+        if (document.querySelectorAll('.item-row').length > 1) document.getElementById(id).remove();
+    }
+
+    function switchStep(from, to) {
+        document.getElementById('step' + from).classList.add('d-none');
+        document.getElementById('step' + to).classList.remove('d-none');
+        window.scrollTo(0, 0);
+    }
+
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        try {
+            const items = [];
+            document.querySelectorAll('.item-row').forEach(row => {
+                items.push({
+                    name: row.querySelector('.product-select').value,
+                    count: row.querySelector('.product-count').value
+                });
+            });
+            const urlParams = new URLSearchParams(window.location.search);
+            const botIdFromUrl = urlParams.get('botId') || "LIFF_DEFAULT";
+            currentPayload = {
+                destination: botIdFromUrl,
+                orderDate: document.getElementById('orderDate').value,
+                shopName: document.getElementById('shopName').value,
+                ordererName: document.getElementById('ordererName').value,
+                shipDate: document.getElementById('shipDate').value,
+                remark: document.getElementById('remark').value, // 取得備註內容
+                items: items,
+                userId: userProfile ? userProfile.userId : ""
+            };
+
+            renderSummary('confirmDetail');
+            switchStep(1, 2);
+        } catch (err) {
+            alert("預覽發生錯誤：" + err.message);
+        }
+    });
+
+    function renderSummary(elementId) {
+        let itemsHtml = currentPayload.items.map(i => `<div class="confirm-item d-flex justify-content-between"><span>${i.name}</span><span class="fw-bold">x ${i.count}</span></div>`).join('');
+        document.getElementById(elementId).innerHTML = `
+            <div class="mb-2 small"><b>店家：</b>${currentPayload.shopName}</div>
+            <div class="mb-2 small"><b>出貨日：</b>${currentPayload.shipDate}</div>
+            <div class="mb-2 small"><b>備註：</b>${currentPayload.remark || '無'}</div>
+            <div class="mb-3 small border-bottom pb-2"><b>訂購人：</b>${currentPayload.ordererName}</div>
+            <div>${itemsHtml}</div>
+        `;
+    }
+
+async function handleFinalSubmit() {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = 'flex';
+
+        fetch(GAS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: JSON.stringify(currentPayload)
+        }).then(response => response.text())
+            .then(data => console.log("GAS 回應:", data))
+            .catch(err => console.error("傳送失敗:", err));
+
+        setTimeout(async () => {
+            overlay.style.display = 'none';
+            renderSummary('resultSummary');
+            switchStep(2, 3);
+
+            if (liff.isInClient()) {
+                const itemsMsg = currentPayload.items.map(i => `・${i.name} x ${i.count}`).join('\n');
+                // 訊息加入備註欄位
+                const fullMsg = `【Line表單】訂單已送出：\n--------------------\n下單日期：${currentPayload.orderDate}\n店家名稱：${currentPayload.shopName}\n訂購人：${currentPayload.ordererName}\n預計出貨日：${currentPayload.shipDate}\n備註：${currentPayload.remark || '無'}\n--------------------\n訂購明細：\n${itemsMsg}`;
+
+                try {
+                    await liff.sendMessages([{
+                        type: 'text',
+                        text: fullMsg
+                    }]);
+                    console.log("訊息傳送成功");
+                } catch (err) {
+                    console.error("訊息傳送失敗:", err);
+                    alert("訂單已記錄，但無法發送對帳訊息。");
+                }
+            }
+        }, 800);
+    }
+</script>
+</body>
+</html>

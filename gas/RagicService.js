@@ -1,0 +1,83 @@
+function getRagicNameMap() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(RAGIC_MAPPING_SHEET_NAME);
+  if (!sheet) return {};
+  const data = sheet.getDataRange().getValues();
+  const map = {};
+  for (let i = 1; i < data.length; i++) {
+    const stdName = data[i][0] ? data[i][0].toString().trim() : "";
+    const ragicName = data[i][1] ? data[i][1].toString().trim() : "";
+    if (stdName) map[stdName] = ragicName;
+  }
+  return map;
+}
+
+function uploadOrdersToRagic() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const orderSheet = ss.getSheetByName('訊息轉訂單');
+  if (!orderSheet) return;
+
+  const ragicMap = getRagicNameMap();
+  const userMap = getUserMap(); 
+  const data = orderSheet.getDataRange().getValues();
+  
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (row[3] === "已轉入訊息下單表" && row[6] !== "已同步Ragic") {
+      const originalDate = new Date(row[0]);
+      let shipDate;
+
+      if (row[8] && row[8] !== "") {
+        shipDate = Utilities.formatDate(new Date(row[8]), "GMT+8", "yyyy/MM/dd");
+      } else {
+        const nextDay = new Date(row[0]);
+        nextDay.setDate(nextDay.getDate() + 1);
+        shipDate = Utilities.formatDate(nextDay, "GMT+8", "yyyy/MM/dd");
+      }
+
+      const orderDate = Utilities.formatDate(originalDate, "GMT+8", "yyyy/MM/dd");
+      const payload = {
+        "1000006": userMap[row[2]] || row[2],
+        "1000008": shipDate,
+        "1000009": orderDate,
+        "1000012": row[1] + ":\n" + "下單時間:"+Utilities.formatDate(originalDate, "GMT+8", "yyyy/MM/dd HH:mm:ss")+"\n"+ row[7],
+        "_subtable_1000014": {}
+      };
+
+      const detailStr = row[4];
+      if (detailStr && typeof detailStr === 'string') {
+        const items = detailStr.split(',');
+        items.forEach((item, index) => {
+          const parts = item.split(' x ');
+          if (parts.length === 2) {
+            const stdName = parts[0].trim();
+            payload["_subtable_1000014"]["-" + (index + 1)] = { 
+              "1000010": ragicMap[stdName] || stdName,
+              "1000011": parseInt(parts[1].trim())
+            };
+          }
+        });
+      }
+
+      const result = sendToRagicAPI(payload);
+      if (result && result.status === "SUCCESS") {
+        orderSheet.getRange(i + 1, 7).setValue("已同步Ragic");
+      }
+    }
+  }
+}
+
+function sendToRagicAPI(payload) {
+  let ragicUrl = RAGIC_URL.replace("www.ragic.com", "ap14.ragic.com");
+  if (!ragicUrl.includes("v=3")) ragicUrl += (ragicUrl.includes("?") ? "&v=3" : "?v=3");
+  const authHeader = "Basic " + Utilities.base64Encode(RAGIC_API_KEY + ":");
+  const options = { "method": "post", "contentType": "application/json", "headers": { "Authorization": authHeader, "Accept": "application/json" }, "payload": JSON.stringify(payload), "muteHttpExceptions": true };
+
+  try {
+    const response = UrlFetchApp.fetch(ragicUrl, options);
+    const resJson = JSON.parse(response.getContentText());
+    return (response.getResponseCode() === 200 && resJson.status === "SUCCESS") ? resJson : resJson;
+  } catch (e) {
+    return { "status": "ERROR", "msg": e.toString() };
+  }
+}
