@@ -25,7 +25,9 @@
         async function main() {
             var urlParams = new URLSearchParams(window.location.search);
             var hasOAuthCallback = urlParams.has("code") || urlParams.has("state");
-            var liffId = getLiffIdFromUrl(window.location.hostname, window.location.pathname, "2008894056-few4uzMm");
+            var fromPath = getLiffIdFromUrl(window.location.hostname, window.location.pathname, null);
+            var fromQuery = urlParams.get("liffId");
+            var liffId = fromPath || fromQuery || "2008894056-few4uzMm";
 
             try {
                 if (!liffId) { document.querySelector('p').innerText = "無法取得 LIFF ID，請從 LINE 圖文選單進入。"; return; }

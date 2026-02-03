@@ -94,9 +94,9 @@
 <script>
     var LIFF_ID = (function() {
         var urlParams = new URLSearchParams(window.location.search);
-        var fromQuery = urlParams.get("liffId");
         var fromPath = getLiffIdFromUrl(window.location.hostname, window.location.pathname, null);
-        return fromQuery || fromPath || "2008894056-few4uzMm";
+        var fromQuery = urlParams.get("liffId");
+        return fromPath || fromQuery || "2008894056-few4uzMm";
     })();
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwRDNZrsmN2yBEi35KmkpcVjN88Dtom5X7FRVhCffFeeXCWbRiDylRmbqMUV3CqX9Uz-g/exec"; 
 
