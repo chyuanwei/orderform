@@ -120,7 +120,7 @@
 | **clasp push 失敗（rootDir）** | 錯誤提示 rootDir 不匹配時，編輯 `LineOrderForm/gas/.clasp.json`，將 `rootDir` 改為實際 gas 目錄路徑（例如 `LineOrderForm/gas`）。 |
 | **多 LIFF ID 共用同一頁** | 多個 LIFF App 共用 index/placeOrder 時，若 hardcode 單一 LIFF ID 會導致 init 失敗；已改為使用 `liff-id.js` 的 `getLiffIdFromUrl` 從網址解析 LIFF ID；並支援 `?liffId=xxx` 參數優先。 |
 | **index 轉 placeOrder** | 轉跳時帶 `?liffId=xxx&botId=xxx`，讓 placeOrder 在 Endpoint 載入時仍能取得正確 LIFF ID。 |
-| **LIFF 初始化錯誤（Endpoint 導向）** | LINE 導向到 GitHub Pages 時會覆寫 query，帶錯的 `liffId`。解法：(1) **LIFF ID 取得順序改為 path 優先、query 次之**；(2) Endpoint URL 設成 `.../orderform/liff/{liffId}/placeOrder.html`（路徑用 **liff/** 前綴，避免第一段為數字導致 400）；(3) 導向頁為 hardcode，meta refresh + JS 轉至主頁並帶正確 liffId。 |
+| **LIFF Endpoint URL** | 所有 LIFF App 的 Endpoint URL 皆設為 `https://chyuanwei.github.io/orderform/placeOrder.html`。placeOrder 以 path 優先、query 次之取得 LIFF ID；必要時可在連結帶 `?liffId=xxx`。 |
 
 ---
 
