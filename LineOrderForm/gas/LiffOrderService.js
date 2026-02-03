@@ -2,6 +2,12 @@
  * 分支 B：處理 LIFF 訂單資料
  */
 function handleLiffOrder(payload) {
+  // 第一時間將前端送來的 C 欄品名轉成 B 欄，後續流程不變
+  const cToBMap = typeof getRagicCToBMap === "function" ? getRagicCToBMap() : {};
+  payload.items.forEach(function (item) {
+    item.name = cToBMap[item.name] || item.name;
+  });
+
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let itemsSummary;
   const orderTime = new Date();

@@ -15,3 +15,7 @@
 ```bash
 npx clasp pull
 ```
+
+## Deploy 說明
+
+每次更新 GAS 程式後，AI 會提供 **Comment for deploy**，可作為 `clasp push` 備註或 GAS 版本說明使用。

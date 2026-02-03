@@ -12,6 +12,24 @@ function getRagicNameMap() {
   return map;
 }
 
+/**
+ * C 欄 → B 欄對照（Ragic 對照表：C 為顯示用，B 為系統/Ragic 用）
+ * 前端顯示 C 欄，送進後端後先轉成 B 欄再往下流程
+ */
+function getRagicCToBMap() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(RAGIC_MAPPING_SHEET_NAME);
+  if (!sheet) return {};
+  const data = sheet.getDataRange().getValues();
+  const map = {};
+  for (let i = 1; i < data.length; i++) {
+    const colB = data[i][1] ? data[i][1].toString().trim() : "";
+    const colC = data[i][2] ? data[i][2].toString().trim() : "";
+    if (colC) map[colC] = colB;
+  }
+  return map;
+}
+
 function uploadOrdersToRagic() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const orderSheet = ss.getSheetByName('訊息轉訂單');

@@ -1,0 +1,37 @@
+---
+description: GAS 更新時必須提供 deploy 用 comment
+globs: LineOrderForm/gas/**/*.js
+alwaysApply: false
+---
+
+# GAS 更新：Deploy Comment
+
+每次修改或新增 `LineOrderForm/gas/` 底下的檔案後，**必須**在回覆結尾提供一段 **Comment for deploy**，供使用者部署時使用。
+
+## 格式
+
+- 簡短一行摘要（可當 GAS 版本說明或 clasp 備註）
+- 若有重要變更，可列 1～3 點 bullet
+
+## 範例
+
+```
+---
+**Comment for deploy**
+- doGet：產品清單改為讀取 Ragic 對照表 A 欄
+---
+```
+
+或
+
+```
+---
+**Comment for deploy**
+Utils: 抽離 filterDebugRows 供單元測試，cleanDebugLogAndLeaveTrace 行為不變
+---
+```
+
+## 注意
+
+- 即使只改註解或格式，也給一句 deploy comment
+- 使用者會用於 GAS 部署版本說明或紀錄

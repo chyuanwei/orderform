@@ -51,8 +51,8 @@ function doGet(e) {
     const lastRow = sheet.getLastRow();
     if (lastRow <= 1) return returnJson([]); 
 
-    // 產品清單改為讀取 A 欄（標準名稱），寫入 Ragic 時仍會經 getRagicNameMap 轉成 B 欄
-    const options = sheet.getRange(2, 1, lastRow - 1, 1).getValues()
+    // 產品清單改為讀取 C 欄給前端顯示，後端收到訂單後會先轉成 B 欄再往下流程
+    const options = sheet.getRange(2, 3, lastRow - 1, 1).getValues()
       .map(row => row[0])
       .filter(item => item !== "" && item !== null); 
     
