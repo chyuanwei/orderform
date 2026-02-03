@@ -45,7 +45,8 @@
 ### 產品清單（placeOrder 前端）
 
 - **來源**：GAS `doGet` → 試算表「**Ragic 對照表**」**C 欄**，第 2 列～倒數第 2 列，原樣回傳給前端顯示。
-- **前端**：`placeOrder.html` 用 `fetch(GAS_URL)` GET 取得 JSON 陣列（C 欄），作為下拉選單；使用者選 C 欄送出。
+- **快取**：`doGet` 使用 **PropertiesService.getScriptProperties()** 儲存產品清單，key `productList_C`（JSON 字串）、`productList_C_updatedAt`（上次更新時間，秒）。過期間隔由 `Main.js` 常數 **`PRODUCT_LIST_REFRESH_SECONDS`** 決定（預設 6 小時 = 21600 秒）；超過間隔後下一次 doGet 會從試算表重讀並更新 Properties。**正式與測試環境共用**同一 GAS、同一產品清單與快取。
+- **前端**：`placeOrder.html` / `placeOrder-test.html` 在 onload **一開始**即發起 `fetch(GAS_URL)`（與 liff.init、getProfile 並行），需要時再 await 取得 JSON 陣列作為下拉選單；使用者選 C 欄送出。
 - **後端入口**：`handleLiffOrder` 收到 payload 後**第一時間**用 `getRagicCToBMap()` 把 `payload.items[].name`（C 欄）轉成 B 欄，其餘流程不變。
 - **寫入試算表與 Ragic**：一律使用已轉好的 **B 欄**（`getRagicNameMap`、`sendToRagicAPI` 等後端邏輯不需改動）。
 
@@ -101,6 +102,7 @@
 - **試算表、Ragic、API Key**：在 GAS 專案屬性（PropertiesService）與 `Config.js` 常數中設定。
 - **botId ↔ OA 名稱**：GAS **指令碼屬性**，key 為 `OA_CONFIG_JSON`，value 為 JSON 字串，格式 `{ "botId": { "name": "OA名稱", "token": "..." }, ... }`。無 botId 且 PC 下單時由 Main.js 設為「PC下單」。
 - **Ragic 對照表**：試算表工作表 `Ragic 對照表`，**A 欄**=標準名稱，**B 欄**=Ragic 用名稱，**C 欄**=前端顯示用；doGet 回傳 C 欄，handleLiffOrder 入口用 `getRagicCToBMap()`（C→B）轉換後再往下流程。
+- **產品清單快取**：`Main.js` 常數 `PRODUCT_LIST_REFRESH_SECONDS`（秒）為過期間隔；Script Properties 的 `productList_C`、`productList_C_updatedAt` 由 doGet 自動讀寫。若清單過大導致 Properties 寫入失敗（單一 value 約 9KB 上限），doGet 仍會回傳本次試算表結果並記 log。
 
 ---
 
@@ -108,7 +110,7 @@
 
 - **liff-id.js**（根目錄）：`getLiffIdFromUrl(hostname, pathname, fallback)`。當 `hostname === "liff.line.me"` 時從 pathname 用正則 `/^\/([^/]+)(?:\/|$)/` 取 LIFF ID（支援 `/{liffId}/placeOrder.html` 與 `/{liffId}`）；非 liff.line.me 時回傳 fallback。**不 hardcode 單一 LIFF ID**，可同時支援多個 LIFF App（如 2008894056、2008892626）。有單元測試 `gas/__tests__/liff-id.test.js`。
 - **index.html**：先載入 `liff-id.js`，再 `getLiffIdFromUrl(hostname, pathname, fallback)` 取得 liffId 後 `liff.init`；已登入則轉 `placeOrder.html`（只帶 `?botId=xxx`）；init 失敗且為 OAuth callback 時仍嘗試轉訂單頁。
-- **placeOrder.html**：先載入 `liff-id.js`，再以 `getLiffIdFromUrl` 取得 LIFF_ID 後 `liff.init`；以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`、`isPc`；產品清單為 C 欄、送出後後端轉 B 欄。
+- **placeOrder.html** / **placeOrder-test.html**：先載入 `liff-id.js`，再以 `getLiffIdFromUrl` 取得 LIFF_ID 後 `liff.init`；以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`、`isPc`。產品清單在 onload 一開始即並行 `fetch(GAS_URL)`，與 init/getProfile 同時進行以縮短首屏時間；清單為 C 欄、送出後後端轉 B 欄。
 
 ---
 
