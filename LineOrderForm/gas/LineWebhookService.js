@@ -6,14 +6,12 @@ function handleLineMessage(data) {
   const events = data.events;
 
   // --- 必要修改：關鍵字過濾 ---
-  if (events && events.length > 0 && events[0].message && events[0].message.text) {
-    const userMessage = events[0].message.text;
-    if (userMessage.includes('【Line表單】')) {
-      console.log('系統訊息：偵測到表單彙整內容，已自動跳過防止重複下單。');
-      return ContentService.createTextOutput(JSON.stringify({result: 'skipped'}))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-  }
+// 增加對【Line表單-測試】的偵測判斷
+if (userMessage.includes('【Line表單】') || userMessage.includes('【Line表單-測試】')) {
+  console.log('系統訊息：偵測到表單彙整內容（含測試），已自動跳過防止重複下單。');
+  return ContentService.createTextOutput(JSON.stringify({result: 'skipped'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
   if (!events || events.length === 0) return ContentService.createTextOutput("OK");
 
