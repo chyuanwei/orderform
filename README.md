@@ -6,6 +6,9 @@
 - **LineOrderForm/**：後端與專案整合（GAS、Jest 單元測試、clasp 等），詳見 [LineOrderForm/README.md](LineOrderForm/README.md)
 - **專案脈絡**：開發與 AI 共用的專案 context 見 [.cursor/CONTEXT.md](.cursor/CONTEXT.md)
 
-## LIFF Endpoint URL
+## LIFF 環境分離
 
-所有 LIFF App 的 Endpoint URL 皆設為：**https://chyuanwei.github.io/orderform/placeOrder.html**
+| 環境 | LIFF ID | Endpoint URL | 頁面 |
+|------|---------|--------------|------|
+| **正式** | 2008892626-gElGdN7S | `https://chyuanwei.github.io/orderform/` 或 `.../placeOrder.html` | placeOrder.html、index.html |
+| **測試** | 2008894056-few4uzMm | `https://chyuanwei.github.io/orderform/placeOrder-test.html` | placeOrder-test.html、index-test.html |

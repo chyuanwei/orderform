@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>泉威食品 - 訂單系統</title>
+    <title>泉威食品 - 訂單系統（測試）</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -23,6 +23,7 @@
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
         }
+        .env-badge { font-size: 0.75rem; color: #856404; background: #fff3cd; padding: 2px 8px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -33,7 +34,7 @@
 </div>
 
 <div class="container order-container">
-    <h3 class="text-center mb-4" style="color: #06C755;">泉威食品訂購單</h3>
+    <h3 class="text-center mb-4" style="color: #06C755;">泉威食品訂購單 <span class="env-badge">測試環境</span></h3>
     
     <div id="step1">
         <form id="orderForm">
@@ -98,7 +99,7 @@
         var fromPath = getLiffIdFromUrl(window.location.hostname, window.location.pathname, null);
         var fromQuery = urlParams.get("liffId");
         var fromStorage = (typeof sessionStorage !== "undefined") ? sessionStorage.getItem("liffId") : null;
-        return fromPath || fromQuery || fromStorage || "2008892626-gElGdN7S";
+        return fromPath || fromQuery || fromStorage || "2008894056-few4uzMm";
     })();
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwRDNZrsmN2yBEi35KmkpcVjN88Dtom5X7FRVhCffFeeXCWbRiDylRmbqMUV3CqX9Uz-g/exec"; 
 
@@ -199,7 +200,7 @@
                 shopName: document.getElementById('shopName').value,
                 ordererName: document.getElementById('ordererName').value,
                 shipDate: document.getElementById('shipDate').value,
-                remark: document.getElementById('remark').value, // 取得備註內容
+                remark: document.getElementById('remark').value,
                 items: items,
                 userId: userProfile ? userProfile.userId : "",
                 isPc: isPc
@@ -242,8 +243,7 @@ async function handleFinalSubmit() {
 
             if (liff.isInClient()) {
                 const itemsMsg = currentPayload.items.map(i => `・${i.name} x ${i.count}`).join('\n');
-                // 訊息加入備註欄位
-                const fullMsg = `【Line表單】訂單已送出：\n--------------------\n下單日期：${currentPayload.orderDate}\n店家名稱：${currentPayload.shopName}\n訂購人：${currentPayload.ordererName}\n預計出貨日：${currentPayload.shipDate}\n備註：${currentPayload.remark || '無'}\n--------------------\n訂購明細：\n${itemsMsg}`;
+                const fullMsg = `【Line表單-測試】訂單已送出：\n--------------------\n下單日期：${currentPayload.orderDate}\n店家名稱：${currentPayload.shopName}\n訂購人：${currentPayload.ordererName}\n預計出貨日：${currentPayload.shipDate}\n備註：${currentPayload.remark || '無'}\n--------------------\n訂購明細：\n${itemsMsg}`;
 
                 try {
                     await liff.sendMessages([{

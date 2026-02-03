@@ -120,8 +120,8 @@
 | **clasp push 失敗（rootDir）** | 錯誤提示 rootDir 不匹配時，編輯 `LineOrderForm/gas/.clasp.json`，將 `rootDir` 改為實際 gas 目錄路徑（例如 `LineOrderForm/gas`）。 |
 | **多 LIFF ID 共用同一頁** | 多個 LIFF App 共用 index/placeOrder 時，若 hardcode 單一 LIFF ID 會導致 init 失敗；已改為使用 `liff-id.js` 的 `getLiffIdFromUrl` 從網址解析 LIFF ID；並支援 `?liffId=xxx` 參數優先。 |
 | **index 轉 placeOrder** | 轉跳時帶 `?liffId=xxx&botId=xxx`，讓 placeOrder 在 Endpoint 載入時仍能取得正確 LIFF ID。 |
-| **LIFF Endpoint URL** | 可設為根目錄 `https://chyuanwei.github.io/orderform/` 或 `.../placeOrder.html`。placeOrder 以 path → query → **sessionStorage** → fallback 取得 LIFF ID；呼叫 liff.login() 前會將 liffId、botId 存入 sessionStorage，OAuth 回傳後仍可還原。 |
-| **LIFF 內取不到 userId** | 在 LINE 內開 LIFF 時若 getProfile() 失敗，placeOrder 會改從 liff.getDecodedIDToken() 的 `sub` 取得 userId、`name` 當 displayName；LIFF App 需勾選 scope **profile**、**openid**。 |
+| **LIFF 環境分離** | **正式** 2008892626：Endpoint `.../orderform/` 或 `.../placeOrder.html`，fallback 2008892626。**測試** 2008894056：Endpoint `.../orderform/placeOrder-test.html`，fallback 2008894056。兩套頁面（placeOrder / placeOrder-test、index / index-test）互不干擾。 |
+| **LIFF 內取不到 userId** | getProfile 失敗時改從 liff.getDecodedIDToken() 的 `sub` 取得；LIFF 需勾選 scope **profile**、**openid**。 |
 
 ---
 
