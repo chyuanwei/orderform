@@ -30,6 +30,7 @@
         async function main() {
             var urlParams = new URLSearchParams(window.location.search);
             var hasOAuthCallback = urlParams.has("code") || urlParams.has("state");
+            var hasLiffState = urlParams.has("liff.state");
             var fromPath = getLiffIdFromUrl(window.location.hostname, window.location.pathname, null);
             var fromQuery = urlParams.get("liffId");
             var liffId = fromPath || fromQuery || fromStorage || DEFAULT_LIFF_ID;
@@ -37,6 +38,10 @@
             try {
                 if (!liffId) { document.querySelector('p').innerText = "無法取得 LIFF ID，請從 LINE 圖文選單進入。"; return; }
                 await liff.init({ liffId: liffId });
+
+                if (hasLiffState) {
+                    return;
+                }
 
                 if (!liff.isLoggedIn()) {
                     try { sessionStorage.setItem("liffId", liffId); } catch (e) {}

@@ -94,6 +94,15 @@
 <script src="https://chyuanwei.github.io/orderform/liff-id.js"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
+    /* 暫時註解：在 LINE 內建瀏覽器有時會在驗證過程加/刪斜線，若在 liff.init 前強行改網址易導致 liff.state 解析失敗
+    (function preventTrailingSlash404() {
+        var p = window.location.pathname;
+        if (p && p.length > 1 && p.charAt(p.length - 1) === "/") {
+            window.location.replace(window.location.origin + p.replace(/\/+$/, "") + (window.location.search || ""));
+            return;
+        }
+    })();
+    */
     var LIFF_ID = (function() {
         var urlParams = new URLSearchParams(window.location.search);
         var fromPath = getLiffIdFromUrl(window.location.hostname, window.location.pathname, null);
