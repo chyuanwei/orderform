@@ -6,7 +6,7 @@
 
 ## 1. 專案概述
 
-- **前端**：表單 HTML（根目錄：index.html、placeOrder.html、manual 等），對外以 [GitHub chyuanwei/orderform](https://github.com/chyuanwei/orderform) 呈現，**不改變既有根目錄檔案架構**。
+- **前端**：表單 HTML（根目錄：index.html、placeOrder.html、manual 等），對外以 [GitHub chyuanwei/orderform](https://github.com/chyuanwei/orderform) 呈現，**不改變既有根目錄檔案架構**。index 為 LIFF 跳轉頁（登入後只帶 botId 轉 placeOrder）；placeOrder 為訂單表單。
 - **後端**：Google Apps Script (GAS)，部署在 GAS 平台，本地程式碼在 `LineOrderForm/gas/`。
 - **整合**：Jest 單元測試、clasp 與 GAS 同步，均在 `LineOrderForm/` 目錄下。
 
@@ -50,11 +50,10 @@
 
 ### 訂單 Submit → Ragic
 
-1. `placeOrder.html` POST 到 GAS 部署 URL，payload 含 `items`。
-2. GAS `doPost` → `handleLiffOrder(payload)`（LiffOrderService.js）。
-3. 寫入試算表：RawData、表單下單。
-4. `getRagicNameMap()`、`getUserMap()` 對照後組 `ragicPayload`，呼叫 `sendToRagicAPI(ragicPayload)`（RagicService.js）。
-5. Ragic API：POST 到 `RAGIC_URL`（Config.js），Basic Auth，主表 + 子表 `_subtable_1000014`。
+1. `placeOrder.html` POST 到 GAS 部署 URL，payload 含 `items`、`destination`（botId）、`isPc`（PC 偵測）。
+2. GAS `doPost`：設 `botId`、`currentConfig`；若為 LIFF 訂單且無 botId（或 LIFF_DEFAULT）且 `isPc === true` → `currentConfig.name = "PC下單"`。
+3. `handleLiffOrder(payload)`（LiffOrderService.js）：先以 `getRagicCToBMap()` 將品名 C→B，再寫 RawData、表單下單、組 ragicPayload、`sendToRagicAPI`。
+4. Ragic API：POST 到 `RAGIC_URL`，Basic Auth，主表 + 子表 `_subtable_1000014`。
 
 ---
 
@@ -86,7 +85,7 @@
 
 | 項目 | 說明 |
 |------|------|
-| **commit and push** | 一律包含 **GitHub**（git add / commit / push）**與 GAS**（`cd LineOrderForm/gas` → `npx clasp push`），兩邊都要執行。 |
+| **go** / **commit and push** | 同義：一律包含 **GitHub**（git add / commit / push）**與 GAS**（`cd LineOrderForm/gas` → `npx clasp push`），兩邊都要執行。 |
 | **GAS 更新** | 凡修改 `LineOrderForm/gas/**/*.js`，回覆結尾須附 **Comment for deploy**（見 `.cursor/rules/gas-deploy-comment.mdc`）。 |
 | **GAS 執行 vs 版本控制** | 實際執行在 GAS 平台（clasp push）；GitHub 用於版本控制、備份與協作。 |
 | **Utils.js** | 含 `filterDebugRows` 抽離供 Jest 測試；`if (typeof module...)` 區塊僅 Node 執行，GAS 不執行。 |
@@ -98,7 +97,15 @@
 
 - **GAS 部署 URL**：由 GAS 專案「部署」取得；`placeOrder.html` 內 `GAS_URL` 需與實際一致。
 - **試算表、Ragic、API Key**：在 GAS 專案屬性（PropertiesService）與 `Config.js` 常數中設定。
-- **Ragic 對照表**：試算表工作表名稱 `Ragic 對照表`，A 欄=標準名稱，B 欄=Ragic 用名稱。
+- **botId ↔ OA 名稱**：GAS **指令碼屬性**，key 為 `OA_CONFIG_JSON`，value 為 JSON 字串，格式 `{ "botId": { "name": "OA名稱", "token": "..." }, ... }`。無 botId 且 PC 下單時由 Main.js 設為「PC下單」。
+- **Ragic 對照表**：試算表工作表 `Ragic 對照表`，**A 欄**=標準名稱，**B 欄**=Ragic 用名稱，**C 欄**=前端顯示用；doGet 回傳 C 欄，handleLiffOrder 入口用 `getRagicCToBMap()`（C→B）轉換後再往下流程。
+
+---
+
+## 7. 前端行為摘要
+
+- **index.html**：LIFF 初始化後若已登入則轉 `placeOrder.html`（只帶 `?botId=xxx`，不帶 OAuth 參數）；登入後若 init 失敗仍嘗試轉訂單頁。
+- **placeOrder.html**：以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`（botId 或 LIFF_DEFAULT）、`isPc`；產品清單為 C 欄、送出後後端轉 B 欄。
 
 ---
 

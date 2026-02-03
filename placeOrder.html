@@ -91,7 +91,15 @@
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
-    const LIFF_ID = "2008894056-few4uzMm"; 
+    // 從網址取得 LIFF ID（liff.line.me 時為 /{liffId}/...），非 LIFF 入口才用 fallback
+    function getLiffId(fallback) {
+        if (window.location.hostname === "liff.line.me") {
+            var m = window.location.pathname.match(/^\/([^/]+)\//);
+            return (m && m[1]) ? m[1] : (fallback || null);
+        }
+        return fallback || null;
+    }
+    var LIFF_ID = getLiffId("2008894056-few4uzMm");
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwRDNZrsmN2yBEi35KmkpcVjN88Dtom5X7FRVhCffFeeXCWbRiDylRmbqMUV3CqX9Uz-g/exec"; 
 
     let productOptions = [];
@@ -104,6 +112,7 @@
         document.getElementById('shipDate').setAttribute('min', today);
 
         try {
+            if (!LIFF_ID) { console.error("無法取得 LIFF ID"); return; }
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) {
                 liff.login();

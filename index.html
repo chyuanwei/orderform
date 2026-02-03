@@ -21,12 +21,22 @@
     <script>
         var PLACE_ORDER_PAGE = "placeOrder.html";
 
+        function getLiffId(fallback) {
+            if (window.location.hostname === "liff.line.me") {
+                var m = window.location.pathname.match(/^\/([^/]+)\//);
+                return (m && m[1]) ? m[1] : (fallback || null);
+            }
+            return fallback || null;
+        }
+
         async function main() {
             var urlParams = new URLSearchParams(window.location.search);
             var hasOAuthCallback = urlParams.has("code") || urlParams.has("state");
+            var liffId = getLiffId("2008894056-few4uzMm");
 
             try {
-                await liff.init({ liffId: "2008894056-few4uzMm" });
+                if (!liffId) { document.querySelector('p').innerText = "無法取得 LIFF ID，請從 LINE 圖文選單進入。"; return; }
+                await liff.init({ liffId: liffId });
 
                 if (!liff.isLoggedIn()) {
                     liff.login();
