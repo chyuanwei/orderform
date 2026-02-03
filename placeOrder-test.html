@@ -121,6 +121,8 @@
         document.getElementById('orderDate').value = today;
         document.getElementById('shipDate').setAttribute('min', today);
 
+        var productListPromise = fetch(GAS_URL).then(function(r) { return r.json(); });
+
         try {
             if (!LIFF_ID) { console.error("無法取得 LIFF ID"); return; }
             await liff.init({ liffId: LIFF_ID });
@@ -149,8 +151,8 @@
                 document.getElementById('ordererName').value = userProfile.displayName || "";
             }
 
-            const resp = await fetch(GAS_URL);
-            productOptions = await resp.json();
+            var data = await productListPromise;
+            productOptions = Array.isArray(data) ? data : [];
             addItemRow();
         } catch (err) {
             console.error(err);
