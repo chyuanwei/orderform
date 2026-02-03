@@ -120,8 +120,7 @@
 | **clasp push 失敗（rootDir）** | 錯誤提示 rootDir 不匹配時，編輯 `LineOrderForm/gas/.clasp.json`，將 `rootDir` 改為實際 gas 目錄路徑（例如 `LineOrderForm/gas`）。 |
 | **多 LIFF ID 共用同一頁** | 多個 LIFF App 共用 index/placeOrder 時，若 hardcode 單一 LIFF ID 會導致 init 失敗；已改為使用 `liff-id.js` 的 `getLiffIdFromUrl` 從網址解析 LIFF ID；並支援 `?liffId=xxx` 參數優先。 |
 | **index 轉 placeOrder** | 轉跳時帶 `?liffId=xxx&botId=xxx`，讓 placeOrder 在 Endpoint 載入時仍能取得正確 LIFF ID。 |
-| **LIFF 初始化錯誤（Endpoint 導向）** | LINE 導向到 GitHub Pages 時會覆寫 query，帶錯的 `liffId`。解法：(1) **LIFF ID 取得順序改為 path 優先、query 次之**；(2) 每個 LIFF App 的 Endpoint URL 設成 `.../orderform/{liffId}/placeOrder.html`；(3) 導向頁由 **config + 腳本** 產生，見下方「新增 LIFF App」。 |
-| **新增 LIFF App** | 只改 **liff-endpoints.json**（在 `liffIds` 陣列加入新 ID）→ 執行 `node generate-liff-redirects.js` → commit 產生的 `{liffId}/placeOrder.html` 與 config。無需手動新增或改導向頁程式碼。 |
+| **LIFF 初始化錯誤（Endpoint 導向）** | LINE 導向到 GitHub Pages 時會覆寫 query，帶錯的 `liffId`。解法：(1) **LIFF ID 取得順序改為 path 優先、query 次之**；(2) 每個 LIFF App 的 Endpoint URL 設成 `.../orderform/{liffId}/placeOrder.html`；(3) 導向頁為 **hardcode**：`2008892626-gElGdN7S/placeOrder.html`、`2008894056-few4uzMm/placeOrder.html`，用 meta refresh + JS 轉至主頁並帶正確 liffId。新增 LIFF 時需手動新增對應資料夾與導向頁。 |
 
 ---
 
