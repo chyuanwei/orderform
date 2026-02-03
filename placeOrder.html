@@ -121,9 +121,22 @@
                     if (botId) sessionStorage.setItem("liffBotId", botId);
                 } catch (e) {}
                 liff.login();
-            } else {
+                return;
+            }
+
+            try {
                 userProfile = await liff.getProfile();
-                document.getElementById('ordererName').value = userProfile.displayName;
+            } catch (e) {
+                console.warn("getProfile 失敗，嘗試從 ID token 取得", e);
+                try {
+                    var idToken = liff.getDecodedIDToken && liff.getDecodedIDToken();
+                    if (idToken && idToken.sub) {
+                        userProfile = { userId: idToken.sub, displayName: idToken.name || "LINE用戶" };
+                    }
+                } catch (e2) { console.warn("getDecodedIDToken 失敗", e2); }
+            }
+            if (userProfile) {
+                document.getElementById('ordererName').value = userProfile.displayName || "";
             }
 
             const resp = await fetch(GAS_URL);
