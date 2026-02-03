@@ -56,7 +56,8 @@
             var botId = urlParams.get("botId");
             if (botId) params.push("botId=" + encodeURIComponent(botId));
             var targetQuery = params.length ? "?" + params.join("&") : "";
-            window.location.href = PLACE_ORDER_PAGE + targetQuery;
+            var placeOrderUrl = "https://chyuanwei.github.io/orderform/placeOrder.html" + targetQuery;
+            window.location.href = placeOrderUrl;
         }
 
         main();
