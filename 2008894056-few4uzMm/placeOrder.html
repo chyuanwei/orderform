@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跳轉中...</title>
+</head>
+<body>
+    <p>跳轉中...</p>
+    <script>
+        (function() {
+            var q = new URLSearchParams(window.location.search);
+            q.set("liffId", "2008894056-few4uzMm");
+            var target = "../placeOrder.html?" + q.toString();
+            window.location.replace(target);
+        })();
+    </script>
+</body>
+</html>
