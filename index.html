@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
     <title>泉威食品 - 系統跳轉中</title>
     <style>
         body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f4f4f4; }
@@ -20,7 +22,7 @@
     <script src="liff-id.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
-        var PLACE_ORDER_PAGE = "placeOrder.html";
+        var PLACE_ORDER_URL = "https://chyuanwei.github.io/orderform/placeOrder.html";
 
         async function main() {
             var urlParams = new URLSearchParams(window.location.search);
@@ -56,8 +58,7 @@
             var botId = urlParams.get("botId");
             if (botId) params.push("botId=" + encodeURIComponent(botId));
             var targetQuery = params.length ? "?" + params.join("&") : "";
-            var placeOrderUrl = "https://chyuanwei.github.io/orderform/placeOrder.html" + targetQuery;
-            window.location.href = placeOrderUrl;
+            window.location.replace(PLACE_ORDER_URL + targetQuery);
         }
 
         main();
