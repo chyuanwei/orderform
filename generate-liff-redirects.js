@@ -8,6 +8,7 @@ const path = require("path");
 const configPath = path.join(__dirname, "liff-endpoints.json");
 const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 const liffIds = config.liffIds;
+const baseUrl = (config.baseUrl || "").replace(/\/$/, "");
 
 if (!Array.isArray(liffIds) || liffIds.length === 0) {
   console.error("liff-endpoints.json 需包含 liffIds 陣列");
@@ -27,7 +28,7 @@ const template = (liffId) => `<!DOCTYPE html>
         (function() {
             var q = new URLSearchParams(window.location.search);
             q.set("liffId", "${liffId}");
-            var target = "../placeOrder.html?" + q.toString();
+            var target = "${baseUrl}/placeOrder.html?" + q.toString();
             window.location.replace(target);
         })();
     </script>
