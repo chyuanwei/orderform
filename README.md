@@ -8,4 +8,6 @@
 
 ## LIFF Endpoint 導向頁
 
-`2008892626-gElGdN7S/placeOrder.html`、`2008894056-few4uzMm/placeOrder.html` 為 hardcode 導向頁，轉至主頁並帶正確 `liffId`。新增 LIFF App 時需手動新增對應資料夾與導向頁。
+路徑為 **liff/{liffId}/placeOrder.html**（避免路徑第一段為數字導致 400）。  
+目前：`liff/2008892626-gElGdN7S/placeOrder.html`、`liff/2008894056-few4uzMm/placeOrder.html`。  
+LINE Developers 的 Endpoint URL 設為：`https://chyuanwei.github.io/orderform/liff/{liffId}/placeOrder.html`
