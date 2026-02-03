@@ -4,7 +4,7 @@ module.exports = {
   roots: ['<rootDir>/gas'],
   testMatch: ['**/__tests__/**/*.test.js'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  modulePathIgnorePatterns: ['<rootDir>/html/'],
+  modulePathIgnorePatterns: [],
   collectCoverageFrom: [
     'gas/**/*.js',
     '!gas/__tests__/**',

@@ -1,12 +1,10 @@
 # Dependencies
 node_modules/
+LineOrderForm/node_modules/
 
 # GAS / clasp
-gas/.clasp.json
+LineOrderForm/gas/.clasp.json
 .clasp.json
-
-# Nested repo (html 來自獨立 clone，不提交其 .git)
-html/.git/
 
 # IDE / OS
 .idea/
@@ -21,4 +19,4 @@ Thumbs.db
 .env.local
 
 # Jest
-coverage/
+LineOrderForm/coverage/
