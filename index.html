@@ -19,25 +19,38 @@
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
+        var PLACE_ORDER_PAGE = "placeOrder.html";
+
         async function main() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var hasOAuthCallback = urlParams.has("code") || urlParams.has("state");
+
             try {
-                // 初始化 LIFF，請確保 ID 與你的後台一致
                 await liff.init({ liffId: "2008894056-few4uzMm" });
 
-                // 檢查是否成功登入 (選用，但建議加入)
                 if (!liff.isLoggedIn()) {
                     liff.login();
+                    return;
                 }
 
-                // 當 liff.init 執行完成時，SDK 會自動解析 liff.state 
-                // 如果跳轉沒有自動發生，代表可能環境不支援或設定問題
-                console.log("LIFF 初始化成功");
-
+                goToPlaceOrder(urlParams);
             } catch (error) {
                 console.error("LIFF 初始化失敗", error);
-                document.querySelector('p').innerText = "系統初始化失敗，請稍後再試。";
+                if (hasOAuthCallback) {
+                    // 登入後帶 code 回來卻 init 失敗：仍嘗試轉訂單頁（session 可能已寫入）
+                    goToPlaceOrder(urlParams);
+                } else {
+                    document.querySelector('p').innerText = "系統初始化失敗，請稍後再試。";
+                }
             }
         }
+
+        function goToPlaceOrder(urlParams) {
+            var botId = urlParams.get("botId");
+            var targetQuery = botId ? "?botId=" + encodeURIComponent(botId) : "";
+            window.location.href = PLACE_ORDER_PAGE + targetQuery;
+        }
+
         main();
     </script>
 </body>

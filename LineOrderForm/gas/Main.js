@@ -10,12 +10,15 @@ function doPost(e) {
     const data = JSON.parse(postData);
     botId = data.destination;
     logToSheet("botId : "+botId);
-    //OA_CONFIG = JSON.parse(PropertiesService.getScriptProperties().getProperty('OA_CONFIG_JSON'));
-    logToSheet("OA_CONFIG[botId] : "+OA_CONFIG[botId]);
-    currentConfig = (typeof OA_CONFIG !== 'undefined' && OA_CONFIG[botId]) 
-      ? OA_CONFIG[botId] 
-      : { name: '未知OA', token: '' };
-      logToSheet("currentConfig : "+currentConfig);
+    // 情境 B 專用：無 botId 且從 PC 下單 → OA 名稱設為「PC下單」
+    if (data.items && (!botId || botId === "LIFF_DEFAULT") && data.isPc) {
+      currentConfig = { name: "PC下單", token: "" };
+    } else {
+      currentConfig = (typeof OA_CONFIG !== "undefined" && OA_CONFIG[botId])
+        ? OA_CONFIG[botId]
+        : { name: "未知OA", token: "" };
+    }
+    logToSheet("currentConfig : "+currentConfig);
     // 情境 A：來自 LINE OA 的 Webhook
     if (data.events) {
       logToSheet("handleLineMessage : "+data);
