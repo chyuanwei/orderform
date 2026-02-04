@@ -157,6 +157,13 @@
             addItemRow();
         } catch (err) {
             console.error(err);
+            try {
+                if (LIFF_ID) { sessionStorage.setItem("liffId", LIFF_ID); }
+                var botId = new URLSearchParams(window.location.search).get("botId");
+                if (botId) sessionStorage.setItem("liffBotId", botId);
+                if (typeof liff !== "undefined" && liff.login) { liff.login(); return; }
+            } catch (e) { console.warn("liff.login 失敗", e); }
+            document.querySelector('.order-container h3').insertAdjacentHTML('afterend', '<p class="text-danger small">系統初始化失敗，請從 LINE 圖文選單重新進入。</p>');
         }
     };
 

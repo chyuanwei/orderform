@@ -93,6 +93,7 @@
 | **GAS 執行 vs 版本控制** | 實際執行在 GAS 平台（clasp push）；GitHub 用於版本控制、備份與協作。 |
 | **Utils.js** | 含 `filterDebugRows` 抽離供 Jest 測試；`if (typeof module...)` 區塊僅 Node 執行，GAS 不執行。 |
 | **.clasp.json** | 已列入 .gitignore，勿提交；換機器或目錄時需修正 `rootDir`。 |
+| **分析後先問再改** | 分析完問題或提出解法後，**須先詢問使用者意見**，經同意後才執行修改；不得直接進行程式修改。 |
 
 ---
 
@@ -110,7 +111,8 @@
 
 - **liff-id.js**（根目錄）：`getLiffIdFromUrl(hostname, pathname, fallback)`。當 `hostname === "liff.line.me"` 時從 pathname 用正則 `/^\/([^/]+)(?:\/|$)/` 取 LIFF ID（支援 `/{liffId}/placeOrder.html` 與 `/{liffId}`）；非 liff.line.me 時回傳 fallback。**不 hardcode 單一 LIFF ID**，可同時支援多個 LIFF App（如 2008894056、2008892626）。有單元測試 `gas/__tests__/liff-id.test.js`。
 - **index.html**：先載入 `liff-id.js`，再 `getLiffIdFromUrl(hostname, pathname, fallback)` 取得 liffId 後 `liff.init`；已登入則轉 `placeOrder.html`（只帶 `?botId=xxx`）；init 失敗且為 OAuth callback 時仍嘗試轉訂單頁。
-- **placeOrder.html** / **placeOrder-test.html**：先載入 `liff-id.js`，再以 `getLiffIdFromUrl` 取得 LIFF_ID 後 `liff.init`；以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`、`isPc`。產品清單在 onload 一開始即並行 `fetch(GAS_URL)`，與 init/getProfile 同時進行以縮短首屏時間；清單為 C 欄、送出後後端轉 B 欄。
+- **placeOrder.html** / **placeOrder-test.html**：先載入 `liff-id.js`，再以 `getLiffIdFromUrl` 取得 LIFF_ID 後 `liff.init`；以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`、`isPc`。產品清單在 onload 一開始即並行 `fetch(GAS_URL)`，與 init/getProfile 同時進行；清單為 C 欄、送出後後端轉 B 欄。**下單日期**用當地日期（`getFullYear`/`getMonth`/`getDate`），不用 `toISOString`，避免 UTC 導致台灣等時區少一天。
+- **placeOrder.html（正式）**：若 referrer 含 2008894056 則一進頁即導向 placeOrder-test。`liff.init` 失敗時：僅在 **isTestContext**（referrer 含 2008894056）且錯誤符合條件時才導向測試頁；否則（正式 LIFF 在 PC 等）先存 liffId/botId 至 sessionStorage，再嘗試 **liff.login()** 導去做 LINE 登入，若 liff.login 不可用再顯示錯誤訊息。
 
 ---
 
@@ -124,6 +126,8 @@
 | **index 轉 placeOrder** | 轉跳時帶 `?liffId=xxx&botId=xxx`，讓 placeOrder 在 Endpoint 載入時仍能取得正確 LIFF ID。 |
 | **LIFF 環境分離** | **正式** 2008892626：Endpoint `.../orderform/` 或 `.../placeOrder.html`，fallback 2008892626。**測試** 2008894056：Endpoint `.../orderform/placeOrder-test.html`，fallback 2008894056。兩套頁面（placeOrder / placeOrder-test、index / index-test）互不干擾。 |
 | **LIFF 內取不到 userId** | getProfile 失敗時改從 liff.getDecodedIDToken() 的 `sub` 取得；LIFF 需勾選 scope **profile**、**openid**。 |
+| **正式 LIFF 在 PC 被導到測試頁** | 因 placeOrder.html 原在 init 失敗時一律導向 placeOrder-test；已改為僅 isTestContext 時才導向測試，正式情境改為嘗試 liff.login()。 |
+| **404.html** | 與 index-test.html 相同；當 LINE 導向錯誤路徑（如漏掉 /orderform/）觸發 GitHub 404 時，由 404.html 載入 LIFF SDK 嘗試導回正確頁面。 |
 
 ---
 

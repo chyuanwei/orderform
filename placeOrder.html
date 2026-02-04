@@ -152,11 +152,19 @@
         } catch (err) {
             console.error(err);
             var msg = (err && (err.message || err.toString())) || "";
-            if (/invalid|liff|400|mismatch/i.test(msg)) {
+            var isTestContext = document.referrer && document.referrer.indexOf("2008894056") !== -1;
+            if (isTestContext && /invalid|liff|400|mismatch/i.test(msg)) {
                 try { sessionStorage.setItem("liffId", "2008894056-few4uzMm"); } catch (e) {}
                 window.location.replace("https://chyuanwei.github.io/orderform/placeOrder-test.html" + (window.location.search || ""));
                 return;
             }
+            try {
+                if (LIFF_ID) { sessionStorage.setItem("liffId", LIFF_ID); }
+                var botId = new URLSearchParams(window.location.search).get("botId");
+                if (botId) sessionStorage.setItem("liffBotId", botId);
+                if (typeof liff !== "undefined" && liff.login) { liff.login(); return; }
+            } catch (e) { console.warn("liff.login 失敗", e); }
+            document.querySelector('.order-container h3').insertAdjacentHTML('afterend', '<p class="text-danger small">系統初始化失敗，請從 LINE 圖文選單重新進入。</p>');
         }
     };
 
