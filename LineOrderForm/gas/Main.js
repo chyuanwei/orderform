@@ -10,13 +10,16 @@ function doPost(e) {
     const data = JSON.parse(postData);
     botId = data.destination;
     logToSheet("botId : "+botId, 2);
-    // 情境 B 專用：無 botId 且從 PC 下單 → OA 名稱設為「PC下單」
-    if (data.items && (!botId || botId === "LIFF_DEFAULT") && data.isPc) {
-      currentConfig = { name: "PC下單", token: "" };
-    } else {
-      currentConfig = (typeof OA_CONFIG !== "undefined" && OA_CONFIG[botId])
-        ? OA_CONFIG[botId]
-        : { name: "未知OA", token: "" };
+    // 先用 botId 對應 OA 名稱（正式/測試皆會帶 botId）
+    currentConfig = (typeof OA_CONFIG !== "undefined" && OA_CONFIG[botId])
+      ? OA_CONFIG[botId]
+      : { name: "未知OA", token: "" };
+
+    // 情境 B（LIFF 訂單）且 PC 下單：OA 名稱標記為「PC下單+OA名稱」
+    if (data.items && data.isPc === true) {
+      const baseName = currentConfig && currentConfig.name ? String(currentConfig.name) : "未知OA";
+      const prefixed = baseName.indexOf("PC下單+") === 0 ? baseName : ("PC下單+" + baseName);
+      currentConfig = Object.assign({}, currentConfig, { name: prefixed });
     }
     logToSheet("currentConfig : "+currentConfig, 2);
     // 情境 A：來自 LINE OA 的 Webhook

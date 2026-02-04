@@ -53,7 +53,7 @@
 ### 訂單 Submit → Ragic
 
 1. `placeOrder.html` POST 到 GAS 部署 URL，payload 含 `items`、`destination`（botId）、`isPc`（PC 偵測）。
-2. GAS `doPost`：設 `botId`、`currentConfig`；若為 LIFF 訂單且無 botId（或 LIFF_DEFAULT）且 `isPc === true` → `currentConfig.name = "PC下單"`。
+2. GAS `doPost`：先用 `botId` 對應出 `currentConfig`（正式/測試皆可分辨）；若為 LIFF 訂單且 `isPc === true` → `currentConfig.name = "PC下單+OA名稱"`（僅改 name，不影響 token 與後續流程）。
 3. `handleLiffOrder(payload)`（LiffOrderService.js）：先以 `getRagicCToBMap()` 將品名 C→B，再寫 RawData、表單下單、組 ragicPayload、`sendToRagicAPI`。
 4. Ragic API：POST 到 `RAGIC_URL`，Basic Auth，主表 + 子表 `_subtable_1000014`。
 
@@ -131,6 +131,7 @@
 | **LIFF 內取不到 userId** | getProfile 失敗時改從 liff.getDecodedIDToken() 的 `sub` 取得；LIFF 需勾選 scope **profile**、**openid**。 |
 | **正式 LIFF 在 PC 被導到測試頁** | 因 placeOrder.html 原在 init 失敗時一律導向 placeOrder-test；已改為僅 isTestContext 時才導向測試，正式情境改為嘗試 liff.login()。 |
 | **404.html** | 與 index-test.html 相同；當 LINE 導向錯誤路徑（如漏掉 /orderform/）觸發 GitHub 404 時，由 404.html 載入 LIFF SDK 嘗試導回正確頁面。 |
+| **Webhook 訊息未寫入 RawData** | `handleLineMessage` 曾在函式開頭誤用未宣告的 `userMessage`（ReferenceError）導致整段中斷；已改為在 event 內取得 `txt` 後才做 `【Line表單】/【Line表單-測試】` 過濾，且僅跳過該 event，不影響 RawData 寫入。 |
 | **測試環境送單 Ragic 顯示正式 OA 名稱** | OAuth 回傳 URL 無 botId，送單時若 sessionStorage 為先前正式頁留下的 botId 會帶錯。已改：兩頁 onload 一開始依 URL 寫入 botId；測試頁無 botId 時寫入/fallback 為測試 botId（TEST_BOT_ID），Ragic 註解即為 OA_CONFIG 中該 botId 的 name。 |
 
 ---
