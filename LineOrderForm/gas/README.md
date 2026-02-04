@@ -19,3 +19,20 @@ npx clasp pull
 ## Deploy 說明
 
 每次更新 GAS 程式後，AI 會提供 **Comment for deploy**，可作為 `clasp push` 備註或 GAS 版本說明使用。
+
+## logcleanRules 工作表（DebugLog 清理規則）
+
+`cleanDebugLogAndLeaveTrace` 會依 **logcleanRules** 工作表決定要移除的 DebugLog 訊息。若無此工作表或為空，則使用內建預設規則。
+
+| 欄位 | 說明 |
+|------|------|
+| A 訊息內容 | 要比對的文字（精確字串或前綴） |
+| B 比對方式 | `exact`（完全相符）或 `startsWith`（開頭相符） |
+| C 僅在該小時執行 | 0～23，或留空表示每小時都執行 |
+
+範例（等同預設行為）：
+
+| 訊息內容 | 比對方式 | 僅在該小時執行 |
+|----------|----------|----------------|
+| 暫無資料須處理! | exact | （留空） |
+| [系統自動清理]： | startsWith | 6 |

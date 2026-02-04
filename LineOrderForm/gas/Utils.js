@@ -37,17 +37,58 @@ function returnJson(data) {
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
 
+/** logcleanRules 工作表名稱 */
+const LOGCLEAN_RULES_SHEET_NAME = 'logcleanRules';
+
+/**
+ * 取得預設清理規則（當 logcleanRules 工作表不存在或為空時使用）
+ * @returns {Array<{text: string, matchType: string, hourRestrict: number|null}>}
+ */
+function getDefaultLogcleanRules() {
+  return [
+    { text: '暫無資料須處理!', matchType: 'exact', hourRestrict: null },
+    { text: '[系統自動清理]：', matchType: 'startsWith', hourRestrict: 6 }
+  ];
+}
+
+/**
+ * 從「logcleanRules」工作表讀取清理規則
+ * 欄位：A=訊息內容, B=比對方式(exact|startsWith), C=僅在該小時執行(0-23 或留空=每小時)
+ * @param {GoogleAppsScript.Spreadsheet.Spreadsheet} ss
+ * @returns {Array<{text: string, matchType: string, hourRestrict: number|null}>}
+ */
+function getLogcleanRules(ss) {
+  const sheet = ss.getSheetByName(LOGCLEAN_RULES_SHEET_NAME);
+  if (!sheet) return [];
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  const data = sheet.getRange(2, 1, lastRow, 3).getValues();
+  const rules = [];
+  for (let i = 0; i < data.length; i++) {
+    const text = data[i][0] != null ? String(data[i][0]).trim() : '';
+    if (!text) continue;
+    const matchType = (data[i][1] != null ? String(data[i][1]).trim().toLowerCase() : 'exact') || 'exact';
+    const hourCell = data[i][2];
+    let hourRestrict = null;
+    if (hourCell !== '' && hourCell != null) {
+      const h = parseInt(String(hourCell).trim(), 10);
+      if (!isNaN(h) && h >= 0 && h <= 23) hourRestrict = h;
+    }
+    rules.push({ text: text, matchType: matchType === 'startswith' ? 'startsWith' : 'exact', hourRestrict: hourRestrict });
+  }
+  return rules;
+}
+
 /**
  * 高效清理 DebugLog
- * - 每小時：移除「暫無資料須處理!」
- * - 每日 06:00：額外移除舊的「[系統自動清理]」追蹤紀錄
+ * 須移除的 log 訊息由「logcleanRules」工作表維護；若無該表或為空則使用內建預設規則。
  */
 function cleanDebugLogAndLeaveTrace() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("DebugLog");
+  const sheet = ss.getSheetByName(DEBUG_SHEET_NAME);
   
   if (!sheet) {
-    console.error("找不到工作表：DebugLog");
+    console.error("找不到工作表：" + DEBUG_SHEET_NAME);
     return;
   }
 
@@ -55,33 +96,27 @@ function cleanDebugLogAndLeaveTrace() {
   const data = range.getValues();
   if (data.length <= 1) return;
 
-  const TRACE_PREFIX = "[系統自動清理]：";
   const now = new Date();
   const currentHour = now.getHours();
-  const isSixthHour = (currentHour === 6);
-
   const header = data[0];
   const rows = data.slice(1);
 
-  // 1. 執行核心過濾邏輯（與 filterDebugRows 一致）
-  const filteredRows = filterDebugRows(rows, currentHour);
+  let rules = getLogcleanRules(ss);
+  if (!rules || rules.length === 0) rules = getDefaultLogcleanRules();
 
+  const filteredRows = filterDebugRows(rows, currentHour, rules);
   const removedCount = rows.length - filteredRows.length;
+  const isSixthHour = (currentHour === 6);
 
-  // 2. 只有在有變動時才處理（包含 6 點的深度清理或例行的暫無資料清理）
   if (removedCount > 0) {
     const finalData = [header, ...filteredRows];
-
     sheet.clearContents();
     sheet.getRange(1, 1, finalData.length, finalData[0].length)
           .setValues(finalData);
 
-    // 3. 紀錄本次清理結果
     const timestamp = Utilities.formatDate(now, "GMT+8", "yyyy-MM-dd HH:mm:ss");
     const logMessage = `[系統自動清理]：已移除 ${removedCount} 筆資料 (包含 ${isSixthHour ? '舊紀錄重置' : '例行清理'})。`;
-    
     sheet.appendRow([timestamp, logMessage]);
-    
     console.log(`${timestamp} 執行完畢，小時：${currentHour}，共移除：${removedCount} 筆`);
   } else {
     console.log(`小時：${currentHour}，無須清理。`);
@@ -90,21 +125,25 @@ function cleanDebugLogAndLeaveTrace() {
 
 // 僅在 Node 環境（Jest）匯出，GAS 不支援 module，不會執行此塊
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { returnJson, filterDebugRows };
+  module.exports = { returnJson, filterDebugRows, getDefaultLogcleanRules };
 }
 
 /**
- * 抽離的純邏輯：DebugLog 過濾條件（與 cleanDebugLogAndLeaveTrace 內邏輯一致，供單元測試）
- * 僅在 Node 環境存在；GAS 執行時會略過上方 export 塊，此函式不會被上傳。
+ * DebugLog 過濾：依規則移除符合條件的列
+ * @param {Array<Array>} rows - DebugLog 資料列（每列第二欄為訊息內容）
+ * @param {number} currentHour - 目前小時 (0-23)
+ * @param {Array<{text: string, matchType: string, hourRestrict: number|null}>} [rules] - 規則陣列，未傳則用 getDefaultLogcleanRules()
  */
-function filterDebugRows(rows, currentHour) {
-  const TARGET_STRING = '暫無資料須處理!';
-  const TRACE_PREFIX = '[系統自動清理]：';
-  const isSixthHour = currentHour === 6;
+function filterDebugRows(rows, currentHour, rules) {
+  const activeRules = rules && rules.length > 0 ? rules : getDefaultLogcleanRules();
   return rows.filter((row) => {
-    const cellValue = row[1] ? row[1].toString() : '';
-    if (cellValue === TARGET_STRING) return false;
-    if (isSixthHour && cellValue.startsWith(TRACE_PREFIX)) return false;
+    const cellValue = row[1] != null ? String(row[1]) : '';
+    for (let i = 0; i < activeRules.length; i++) {
+      const r = activeRules[i];
+      if (r.hourRestrict !== null && r.hourRestrict !== currentHour) continue;
+      if (r.matchType === 'exact' && cellValue === r.text) return false;
+      if (r.matchType === 'startsWith' && cellValue.indexOf(r.text) === 0) return false;
+    }
     return true;
   });
 }
