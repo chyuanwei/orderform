@@ -2,14 +2,14 @@
  * 整合型接收中心 (doPost)
  */
 function doPost(e) {
-   logToSheet("doPost");
+  logToSheet("doPost", 2);
   try {
     if (!e || !e.postData) return ContentService.createTextOutput("No Data");
 
     const postData = e.postData.contents;
     const data = JSON.parse(postData);
     botId = data.destination;
-    logToSheet("botId : "+botId);
+    logToSheet("botId : "+botId, 2);
     // 情境 B 專用：無 botId 且從 PC 下單 → OA 名稱設為「PC下單」
     if (data.items && (!botId || botId === "LIFF_DEFAULT") && data.isPc) {
       currentConfig = { name: "PC下單", token: "" };
@@ -18,16 +18,16 @@ function doPost(e) {
         ? OA_CONFIG[botId]
         : { name: "未知OA", token: "" };
     }
-    logToSheet("currentConfig : "+currentConfig);
+    logToSheet("currentConfig : "+currentConfig, 2);
     // 情境 A：來自 LINE OA 的 Webhook
     if (data.events) {
-      logToSheet("handleLineMessage : "+data);
+      logToSheet("handleLineMessage : "+data, 2);
       return handleLineMessage(data);
     } 
     
     // 情境 B：來自 LIFF 的訂單表單
     else if (data.items) {
-      logToSheet("handleLiffOrder : "+data);
+      logToSheet("handleLiffOrder : "+data, 2);
       return handleLiffOrder(data);
     } 
     
@@ -48,7 +48,7 @@ var PRODUCT_LIST_REFRESH_SECONDS = 21600;
  * 抓取產品清單入口 (doGet)，使用 PropertiesService 儲存，過期後自動從試算表重讀
  */
 function doGet(e) {
-  logToSheet("doGet");
+  logToSheet("doGet", 2);
   try {
     const prop = PropertiesService.getScriptProperties();
     const cached = prop.getProperty("productList_C");

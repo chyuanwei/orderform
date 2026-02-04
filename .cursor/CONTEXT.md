@@ -104,6 +104,8 @@
 - **botId ↔ OA 名稱**：GAS **指令碼屬性**，key 為 `OA_CONFIG_JSON`，value 為 JSON 字串，格式 `{ "botId": { "name": "OA名稱", "token": "..." }, ... }`。無 botId 且 PC 下單時由 Main.js 設為「PC下單」。
 - **Ragic 對照表**：試算表工作表 `Ragic 對照表`，**A 欄**=標準名稱，**B 欄**=Ragic 用名稱，**C 欄**=前端顯示用；doGet 回傳 C 欄，handleLiffOrder 入口用 `getRagicCToBMap()`（C→B）轉換後再往下流程。
 - **產品清單快取**：`Main.js` 常數 `PRODUCT_LIST_REFRESH_SECONDS`（秒）為過期間隔；Script Properties 的 `productList_C`、`productList_C_updatedAt` 由 doGet 自動讀寫。若清單過大導致 Properties 寫入失敗（單一 value 約 9KB 上限），doGet 仍會回傳本次試算表結果並記 log。
+- **Log_Mode**（指令碼屬性）：控制 DebugLog 寫入。`0`=不寫；`1`=僅營運等級（系統繁忙、發現待處理訂單、AI/處理異常）；`2` 或未設定=營運+除錯（含 doGet/doPost、botId、payload 等）。`logToSheet(msg, level)` 依此決定是否寫入。
+- **logcleanRules**：試算表工作表「logcleanRules」，欄位 A=訊息內容、B=比對方式(exact/startsWith)、C=僅在該小時(0-23 或留空)。`cleanDebugLogAndLeaveTrace` 依此清理 DebugLog；無表或為空時使用內建預設規則（見 `LineOrderForm/gas/README.md`）。
 
 ---
 

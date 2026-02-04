@@ -20,6 +20,18 @@ npx clasp pull
 
 每次更新 GAS 程式後，AI 會提供 **Comment for deploy**，可作為 `clasp push` 備註或 GAS 版本說明使用。
 
+## 指令碼屬性 Log_Mode（DebugLog 寫入開關）
+
+在 GAS 編輯器 → 專案設定 → 指令碼屬性 新增 `Log_Mode`：
+
+| 值 | 行為 |
+|----|------|
+| 0 | 不寫入 DebugLog |
+| 1 | 僅寫入營運等級（系統繁忙、發現待處理訂單、AI/處理異常） |
+| 2 或未設定 | 寫入營運 + 除錯（含 doGet/doPost、botId、payload 等） |
+
+未設定時預設為 2（與原本行為相同）。
+
 ## logcleanRules 工作表（DebugLog 清理規則）
 
 `cleanDebugLogAndLeaveTrace` 會依 **logcleanRules** 工作表決定要移除的 DebugLog 訊息。若無此工作表或為空，則使用內建預設規則。

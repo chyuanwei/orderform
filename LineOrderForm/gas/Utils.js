@@ -1,6 +1,16 @@
-function logToSheet(msg) {
+/**
+ * 寫入 DebugLog。依指令碼屬性 Log_Mode 決定是否寫入：
+ * 0 = 不寫；1 = 僅營運等級(level 1)；2 或未設定 = 營運 + 除錯(level 1 與 2)。
+ * @param {string} msg - 日誌內容
+ * @param {number} [level=2] - 1=營運模式，2=除錯模式。未傳時視為 2。
+ */
+function logToSheet(msg, level) {
+  const mode = PropertiesService.getScriptProperties().getProperty('Log_Mode');
+  if (mode === '0') return;
+  const effectiveLevel = level == null ? 2 : (level === 1 || level === 2 ? level : 2);
+  if (mode === '1' && effectiveLevel !== 1) return;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  let debugSheet = ss.getSheetByName(DEBUG_SHEET_NAME) || ss.insertSheet(DEBUG_SHEET_NAME);
+  const debugSheet = ss.getSheetByName(DEBUG_SHEET_NAME) || ss.insertSheet(DEBUG_SHEET_NAME);
   debugSheet.appendRow([new Date(), msg]);
 }
 

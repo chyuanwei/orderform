@@ -10,7 +10,7 @@ function processMessagesWithAI() {
   const hasPending = data.some(row => row[6] === "待處理"); 
 
   if (!hasPending) {
-    logToSheet("暫無資料須處理!");
+    logToSheet("暫無資料須處理!", 2);
     return; 
   }
 
@@ -18,11 +18,11 @@ function processMessagesWithAI() {
   
   try {
     if (!lock.tryLock(30000)) {
-      logToSheet("【系統繁忙】前一次 AI 解析尚未結束，本次執行跳過。");
+      logToSheet("【系統繁忙】前一次 AI 解析尚未結束，本次執行跳過。", 1);
       return; 
     }
 
-    logToSheet("【智慧巡邏】發現待處理訂單，開始執行...");
+    logToSheet("【智慧巡邏】發現待處理訂單，開始執行...", 1);
 
     // 在迴圈外取得一次產品清單與語意對照表
     const validProducts = getProductList(); 
@@ -43,7 +43,7 @@ function processMessagesWithAI() {
 
           Utilities.sleep(2000); // 正常執行下縮短等待時間
         } catch (e) {
-          logToSheet("AI 處理錯誤: " + e.message);
+          logToSheet("AI 處理錯誤: " + e.message, 1);
           if (e.message.includes("429")) break; 
         }
       }
@@ -54,7 +54,7 @@ function processMessagesWithAI() {
     uploadOrdersToRagic();
 
   } catch (e) {
-    logToSheet("處理程序發生異常: " + e.toString());
+    logToSheet("處理程序發生異常: " + e.toString(), 1);
   } finally {
     lock.releaseLock();
   }
