@@ -116,7 +116,15 @@
     let currentPayload = null;
     let userProfile = null;
 
+    var TEST_BOT_ID = "U7d234a2a4346dc8722c343c9cde29652";
     window.onload = async function() {
+        var urlParams = new URLSearchParams(window.location.search);
+        try {
+            var qBotId = urlParams.get("botId");
+            if (qBotId) sessionStorage.setItem("liffBotId", qBotId);
+            else sessionStorage.setItem("liffBotId", TEST_BOT_ID);
+        } catch (e) {}
+
         var d = new Date();
         var today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         document.getElementById('orderDate').value = today;
@@ -130,8 +138,9 @@
             if (!liff.isLoggedIn()) {
                 try {
                     sessionStorage.setItem("liffId", LIFF_ID);
-                    var botId = new URLSearchParams(window.location.search).get("botId");
+                    var botId = urlParams.get("botId");
                     if (botId) sessionStorage.setItem("liffBotId", botId);
+                    else sessionStorage.setItem("liffBotId", TEST_BOT_ID);
                 } catch (e) {}
                 liff.login();
                 return;
@@ -211,7 +220,7 @@
                 });
             });
             const urlParams = new URLSearchParams(window.location.search);
-            const botIdFromUrl = urlParams.get('botId') || (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("liffBotId") : null) || "LIFF_DEFAULT";
+            const botIdFromUrl = urlParams.get('botId') || (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("liffBotId") : null) || TEST_BOT_ID;
             const isPc = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             currentPayload = {
                 destination: botIdFromUrl,

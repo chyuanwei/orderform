@@ -111,6 +111,12 @@
             window.location.replace("https://chyuanwei.github.io/orderform/placeOrder-test.html" + (window.location.search || ""));
             return;
         }
+        var urlParams = new URLSearchParams(window.location.search);
+        try {
+            var qBotId = urlParams.get("botId");
+            if (qBotId) sessionStorage.setItem("liffBotId", qBotId);
+        } catch (e) {}
+
         var d = new Date();
         var today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         document.getElementById('orderDate').value = today;
@@ -124,7 +130,7 @@
             if (!liff.isLoggedIn()) {
                 try {
                     sessionStorage.setItem("liffId", LIFF_ID);
-                    var botId = new URLSearchParams(window.location.search).get("botId");
+                    var botId = urlParams.get("botId");
                     if (botId) sessionStorage.setItem("liffBotId", botId);
                 } catch (e) {}
                 liff.login();

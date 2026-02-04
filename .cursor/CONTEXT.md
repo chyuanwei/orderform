@@ -112,7 +112,8 @@
 - **liff-id.js**（根目錄）：`getLiffIdFromUrl(hostname, pathname, fallback)`。當 `hostname === "liff.line.me"` 時從 pathname 用正則 `/^\/([^/]+)(?:\/|$)/` 取 LIFF ID（支援 `/{liffId}/placeOrder.html` 與 `/{liffId}`）；非 liff.line.me 時回傳 fallback。**不 hardcode 單一 LIFF ID**，可同時支援多個 LIFF App（如 2008894056、2008892626）。有單元測試 `gas/__tests__/liff-id.test.js`。
 - **index.html**：先載入 `liff-id.js`，再 `getLiffIdFromUrl(hostname, pathname, fallback)` 取得 liffId 後 `liff.init`；已登入則轉 `placeOrder.html`（只帶 `?botId=xxx`）；init 失敗且為 OAuth callback 時仍嘗試轉訂單頁。
 - **placeOrder.html** / **placeOrder-test.html**：先載入 `liff-id.js`，再以 `getLiffIdFromUrl` 取得 LIFF_ID 後 `liff.init`；以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`、`isPc`。產品清單在 onload 一開始即並行 `fetch(GAS_URL)`，與 init/getProfile 同時進行；清單為 C 欄、送出後後端轉 B 欄。**下單日期**用當地日期（`getFullYear`/`getMonth`/`getDate`），不用 `toISOString`，避免 UTC 導致台灣等時區少一天。
-- **placeOrder.html（正式）**：若 referrer 含 2008894056 則一進頁即導向 placeOrder-test。`liff.init` 失敗時：僅在 **isTestContext**（referrer 含 2008894056）且錯誤符合條件時才導向測試頁；否則（正式 LIFF 在 PC 等）先存 liffId/botId 至 sessionStorage，再嘗試 **liff.login()** 導去做 LINE 登入，若 liff.login 不可用再顯示錯誤訊息。
+- **placeOrder.html（正式）**：若 referrer 含 2008894056 則一進頁即導向 placeOrder-test。onload 一開始若 URL 有 `botId` 即寫入 sessionStorage（以目前頁為準）。`liff.init` 失敗時：僅在 **isTestContext** 時才導向測試頁；否則嘗試 **liff.login()**，不可用再顯示錯誤。
+- **placeOrder-test.html（測試）**：onload 一開始若 URL 有 `botId` 寫入 sessionStorage，**若無**（如 OAuth 回傳 `?code=...&state=...`）則寫入測試 botId `TEST_BOT_ID`（U7d234a2a4346dc8722c343c9cde29652）；送單時 `destination` fallback 為 `TEST_BOT_ID` 而非 `LIFF_DEFAULT`。確保從測試頁送單時後端收到測試 botId，Ragic 註解顯示「泉威官方Line測試」等測試用 OA 名稱；不影響手機 LINE 有帶 botId 的正常流程。
 
 ---
 
@@ -128,6 +129,7 @@
 | **LIFF 內取不到 userId** | getProfile 失敗時改從 liff.getDecodedIDToken() 的 `sub` 取得；LIFF 需勾選 scope **profile**、**openid**。 |
 | **正式 LIFF 在 PC 被導到測試頁** | 因 placeOrder.html 原在 init 失敗時一律導向 placeOrder-test；已改為僅 isTestContext 時才導向測試，正式情境改為嘗試 liff.login()。 |
 | **404.html** | 與 index-test.html 相同；當 LINE 導向錯誤路徑（如漏掉 /orderform/）觸發 GitHub 404 時，由 404.html 載入 LIFF SDK 嘗試導回正確頁面。 |
+| **測試環境送單 Ragic 顯示正式 OA 名稱** | OAuth 回傳 URL 無 botId，送單時若 sessionStorage 為先前正式頁留下的 botId 會帶錯。已改：兩頁 onload 一開始依 URL 寫入 botId；測試頁無 botId 時寫入/fallback 為測試 botId（TEST_BOT_ID），Ragic 註解即為 OA_CONFIG 中該 botId 的 name。 |
 
 ---
 
