@@ -79,11 +79,21 @@ function handleLiffOrder(payload) {
       if (result && result.status === "SUCCESS") {
         console.log("✅ LIFF 訂單即時同步 Ragic 成功！");
       } else {
-        console.error("❌ Ragic 同步失敗：" + (result ? result.msg : "未知原因"));
+        const httpCode = result && result.httpCode != null ? result.httpCode : 'N/A';
+        const msg = result && (result.msg || result.message) ? (result.msg || result.message) : '未知原因';
+        const status = result && result.status ? result.status : 'UNKNOWN';
+        const errSummary = `❌ LIFF即時同步Ragic失敗：status=${status}, http=${httpCode}, msg=${msg}`;
+        console.error(errSummary);
+        if (typeof logToSheet === "function") {
+          logToSheet(errSummary, 1);
+        }
       }
     }
   } catch (e) {
     console.error("即時同步 Ragic 過程發生崩潰: " + e.message);
+    if (typeof logToSheet === "function") {
+      logToSheet("LIFF即時同步Ragic崩潰: " + e.toString(), 1);
+    }
   }
   
   return ContentService.createTextOutput("Success")

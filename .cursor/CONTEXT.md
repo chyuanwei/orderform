@@ -132,6 +132,7 @@
 | **正式 LIFF 在 PC 被導到測試頁** | 因 placeOrder.html 原在 init 失敗時一律導向 placeOrder-test；已改為僅 isTestContext 時才導向測試，正式情境改為嘗試 liff.login()。 |
 | **404.html** | 與 index-test.html 相同；當 LINE 導向錯誤路徑（如漏掉 /orderform/）觸發 GitHub 404 時，由 404.html 載入 LIFF SDK 嘗試導回正確頁面。 |
 | **Webhook 訊息未寫入 RawData** | `handleLineMessage` 曾在函式開頭誤用未宣告的 `userMessage`（ReferenceError）導致整段中斷；已改為在 event 內取得 `txt` 後才做 `【Line表單】/【Line表單-測試】` 過濾，且僅跳過該 event，不影響 RawData 寫入。 |
+| **訊息轉訂單卡在「待同步」** | `uploadOrdersToRagic()` 原本僅在成功時寫回「已同步Ragic」，失敗時不留痕跡；已改為在同步失敗時用 `logToSheet(..., 1)` 記錄 `status/httpCode/msg` 與列號，便於追查 Ragic API（401/403、非 JSON 回傳等）。LIFF 即時同步失敗也會寫入 DebugLog（level 1）。 |
 | **測試環境送單 Ragic 顯示正式 OA 名稱** | OAuth 回傳 URL 無 botId，送單時若 sessionStorage 為先前正式頁留下的 botId 會帶錯。已改：兩頁 onload 一開始依 URL 寫入 botId；測試頁無 botId 時寫入/fallback 為測試 botId（TEST_BOT_ID），Ragic 註解即為 OA_CONFIG 中該 botId 的 name。 |
 
 ---

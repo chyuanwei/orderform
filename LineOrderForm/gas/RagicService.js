@@ -80,6 +80,17 @@ function uploadOrdersToRagic() {
       const result = sendToRagicAPI(payload);
       if (result && result.status === "SUCCESS") {
         orderSheet.getRange(i + 1, 7).setValue("已同步Ragic");
+      } else {
+        // 失敗時留下可追蹤的營運紀錄（避免卡在「待同步」卻無訊息）
+        const httpCode = result && result.httpCode != null ? result.httpCode : 'N/A';
+        const msg = result && (result.msg || result.message) ? (result.msg || result.message) : '';
+        const status = result && result.status ? result.status : 'UNKNOWN';
+        const summary = `Ragic同步失敗：status=${status}, http=${httpCode}, msg=${msg}`;
+        if (typeof logToSheet === 'function') {
+          logToSheet(`${summary} | 訊息轉訂單第${i + 1}列 | OA=${row[1]} | 用戶=${row[2]}`, 1);
+        } else {
+          console.error(summary);
+        }
       }
     }
   }
@@ -93,9 +104,19 @@ function sendToRagicAPI(payload) {
 
   try {
     const response = UrlFetchApp.fetch(ragicUrl, options);
-    const resJson = JSON.parse(response.getContentText());
-    return (response.getResponseCode() === 200 && resJson.status === "SUCCESS") ? resJson : resJson;
+    const httpCode = response.getResponseCode();
+    const rawText = response.getContentText();
+    let resJson = null;
+    try {
+      resJson = JSON.parse(rawText);
+    } catch (parseErr) {
+      // 非 JSON 回傳（常見於 401/403 HTML），保留 raw 以利追查
+      return { status: "ERROR", httpCode: httpCode, msg: "Non-JSON response: " + String(parseErr), raw: rawText };
+    }
+    // 統一補上 httpCode，方便上層記錄
+    if (resJson && typeof resJson === 'object') resJson.httpCode = httpCode;
+    return resJson;
   } catch (e) {
-    return { "status": "ERROR", "msg": e.toString() };
+    return { status: "ERROR", httpCode: null, msg: e.toString() };
   }
 }
