@@ -65,6 +65,13 @@
             </div>
 
             <div class="section-title">訂購項目<span class="req">*</span></div>
+            <div class="mb-3">
+                <label class="form-label small text-muted">分類過濾（可複選）</label>
+                <select id="categoryFilter" class="form-select" multiple size="5">
+                    <option value="">載入中...</option>
+                </select>
+                <small class="text-muted">按住 Ctrl (Windows) 或 Cmd (Mac) 可複選</small>
+            </div>
             <div id="itemList"></div>
             <button type="button" class="btn btn-outline-line w-100 mb-4" onclick="addItemRow()">+ 增加一筆品項</button>
 
@@ -116,7 +123,9 @@
     })();
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwRDNZrsmN2yBEi35KmkpcVjN88Dtom5X7FRVhCffFeeXCWbRiDylRmbqMUV3CqX9Uz-g/exec"; 
 
-    let productOptions = [];
+    let productOptions = [];      // 所有產品（含 name, category）
+    let allCategories = [];       // 所有分類
+    let selectedCategories = [];  // 使用者選擇的分類
     let currentPayload = null;
     let userProfile = null;
 
@@ -194,6 +203,17 @@
 
             var data = await productListPromise;
             productOptions = Array.isArray(data) ? data : [];
+            
+            // 提取所有分類（去重）
+            var categorySet = new Set();
+            productOptions.forEach(function(item) {
+                if (item.category) categorySet.add(item.category);
+            });
+            allCategories = Array.from(categorySet);
+            
+            // 初始化分類過濾選單
+            initCategoryFilter();
+            
             addItemRow();
         } catch (err) {
             console.error(err);
@@ -214,9 +234,9 @@
             <div class="item-row" id="${rowId}">
                 <div class="row g-2">
                     <div class="col-7">
-                        <select class="form-select product-select" required>
-                            <option value="" disabled selected>請選擇品項...</option>
-                            ${productOptions.map(p => `<option value="${p}">${p}</option>`).join('')}
+                        <input type="text" class="form-control mb-1 product-search" placeholder="🔍 搜尋產品..." data-row-id="${rowId}" oninput="searchProduct('${rowId}', this.value)">
+                        <select class="form-select product-select" required data-row-id="${rowId}">
+                            <option value="">請先選擇分類</option>
                         </select>
                     </div>
                     <div class="col-3">
@@ -228,6 +248,76 @@
                 </div>
             </div>`;
         container.insertAdjacentHTML('beforeend', rowHtml);
+        
+        // 初始化該列的產品下拉選單
+        var newSelect = document.querySelector('#' + rowId + ' .product-select');
+        updateProductSelect(newSelect, '');
+    }
+    
+    // 搜尋產品（單一品項列）
+    function searchProduct(rowId, keyword) {
+        var select = document.querySelector('#' + rowId + ' .product-select');
+        updateProductSelect(select, keyword);
+    }
+
+    // 初始化分類過濾選單
+    function initCategoryFilter() {
+        var filterSelect = document.getElementById('categoryFilter');
+        filterSelect.innerHTML = allCategories.map(function(cat) {
+            return '<option value="' + cat + '">' + cat + '</option>';
+        }).join('');
+        
+        // 監聽分類選擇變更
+        filterSelect.addEventListener('change', function() {
+            var selected = Array.from(filterSelect.selectedOptions).map(function(opt) { return opt.value; });
+            selectedCategories = selected;
+            updateAllProductSelects();
+        });
+    }
+
+    // 更新所有品項的下拉選單（依分類過濾）
+    function updateAllProductSelects() {
+        var allSelects = document.querySelectorAll('.item-row .product-select');
+        allSelects.forEach(function(select) {
+            var currentValue = select.value;
+            var rowId = select.getAttribute('data-row-id');
+            var searchInput = document.querySelector('#' + rowId + ' .product-search');
+            var keyword = searchInput ? searchInput.value : '';
+            updateProductSelect(select, keyword);
+            // 如果當前選中的產品還在過濾後的清單中，保持選中
+            if (currentValue) {
+                var stillExists = Array.from(select.options).some(function(opt) { return opt.value === currentValue; });
+                if (stillExists) select.value = currentValue;
+            }
+        });
+    }
+
+    // 更新單一產品下拉選單
+    function updateProductSelect(selectElement, searchKeyword) {
+        var keyword = searchKeyword || '';
+        var filtered = productOptions.filter(function(item) {
+            var matchCategory = selectedCategories.length === 0 || selectedCategories.includes(item.category);
+            var matchSearch = keyword === '' || item.name.toLowerCase().includes(keyword.toLowerCase());
+            return matchCategory && matchSearch;
+        });
+        
+        var optionsHtml = '<option value="">請選擇品項</option>';
+        if (selectedCategories.length === 0) {
+            optionsHtml = '<option value="">請先選擇分類</option>';
+        } else if (filtered.length === 0) {
+            optionsHtml = '<option value="">查無符合的產品</option>';
+        } else {
+            optionsHtml += filtered.map(function(p) {
+                return '<option value="' + p.name + '">' + p.name + '</option>';
+            }).join('');
+        }
+        selectElement.innerHTML = optionsHtml;
+    }
+    
+    // 搜尋產品（單一品項列）
+    function searchProduct(rowId, keyword) {
+        var select = document.querySelector('#' + rowId + ' .product-select');
+        updateProductSelect(select, keyword);
     }
 
     function removeRow(id) {

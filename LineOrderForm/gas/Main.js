@@ -99,10 +99,14 @@ function doGet(e) {
     const lastRow = sheet.getLastRow();
     if (lastRow <= 1) return returnJson([]); 
 
-    // 產品清單改為讀取 C 欄給前端顯示，後端收到訂單後會先轉成 B 欄再往下流程
-    const options = sheet.getRange(2, 3, lastRow - 1, 1).getValues()
-      .map(row => row[0])
-      .filter(item => item !== "" && item !== null); 
+    // 產品清單改為讀取 C 欄（名稱）+ D 欄（分類），回傳結構化資料
+    const data = sheet.getRange(2, 3, lastRow - 1, 2).getValues();
+    const options = data
+      .filter(row => row[0] !== "" && row[0] !== null)
+      .map(row => ({
+        name: row[0],           // C 欄：產品名稱
+        category: row[1] || ""  // D 欄：分類（可能為空）
+      }));
     
     const json = JSON.stringify(options);
     try {
