@@ -262,14 +262,22 @@
     // 初始化分類過濾按鈕
     function initCategoryFilter() {
         var container = document.getElementById('categoryButtons');
-        container.innerHTML = allCategories.map(function(cat) {
-            return '<button type="button" class="btn btn-outline-primary btn-sm" data-category="' + cat + '" onclick="toggleCategory(\'' + cat + '\')">' + cat + '</button>';
-        }).join('');
+        container.innerHTML = '';
+        
+        allCategories.forEach(function(cat) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-outline-primary btn-sm';
+            btn.textContent = cat;
+            btn.setAttribute('data-category', cat);
+            btn.onclick = function() { toggleCategory(cat); };
+            container.appendChild(btn);
+        });
     }
     
     // 切換分類選擇
     function toggleCategory(category) {
-        var btn = document.querySelector('[data-category="' + category + '"]');
+        var btn = document.querySelector('[data-category="' + category.replace(/"/g, '\\"') + '"]');
         if (!btn) return;
         
         var idx = selectedCategories.indexOf(category);
