@@ -23,6 +23,64 @@
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
         }
+        
+        /* 分類按鈕樣式（覆蓋 Bootstrap 的 :active 狀態，修正手機點擊問題） */
+        .category-btn-selected {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+            color: #fff !important;
+        }
+        .category-btn-unselected {
+            background-color: transparent !important;
+            border-color: #0d6efd !important;
+            color: #0d6efd !important;
+        }
+        /* 強制覆蓋所有狀態 */
+        .category-btn-selected:active,
+        .category-btn-selected:focus,
+        .category-btn-selected:hover {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+            color: #fff !important;
+        }
+        .category-btn-unselected:active,
+        .category-btn-unselected:focus,
+        .category-btn-unselected:hover {
+            background-color: transparent !important;
+            border-color: #0d6efd !important;
+            color: #0d6efd !important;
+        }
+        
+        /* 產品選擇模態框樣式 */
+        .product-modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;
+        }
+        .product-modal-content {
+            background: white; width: 90%; max-width: 500px; max-height: 80vh; 
+            border-radius: 15px; overflow: hidden; display: flex; flex-direction: column;
+        }
+        .product-modal-header {
+            padding: 15px 20px; background: #06C755; color: white; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .product-modal-body {
+            padding: 15px; overflow-y: auto; flex: 1;
+        }
+        .product-search-input {
+            width: 100%; padding: 12px; border: 2px solid #e9ecef; 
+            border-radius: 8px; font-size: 16px; margin-bottom: 15px;
+        }
+        .product-option {
+            padding: 15px; border: 1px solid #e9ecef; border-radius: 8px; 
+            margin-bottom: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .product-option:hover { background: #f8f9fa; border-color: #06C755; }
+        .product-option:active { background: #e9ecef; }
+        .close-modal-btn {
+            background: none; border: none; color: white; font-size: 24px; 
+            cursor: pointer; padding: 0; width: 30px; height: 30px;
+        }
     </style>
 </head>
 <body>
@@ -30,6 +88,20 @@
 <div id="loadingOverlay">
     <div class="spinner-border text-success" role="status"></div>
     <p class="mt-2">系統處理中...</p>
+</div>
+
+<!-- 產品選擇模態框 -->
+<div id="productModal" class="product-modal">
+    <div class="product-modal-content">
+        <div class="product-modal-header">
+            <h5 style="margin: 0;">選擇產品</h5>
+            <button class="close-modal-btn" onclick="closeProductModal()">×</button>
+        </div>
+        <div class="product-modal-body">
+            <input type="text" id="modalSearchInput" class="product-search-input" placeholder="🔍 搜尋產品..." oninput="filterModalProducts()">
+            <div id="modalProductList"></div>
+        </div>
+    </div>
 </div>
 
 <div class="container order-container">
@@ -64,6 +136,12 @@
             </div>
 
             <div class="section-title">訂購項目<span class="req">*</span></div>
+            <div class="mb-3">
+                <label class="form-label small text-muted">分類過濾（可複選）</label>
+                <div id="categoryButtons" class="d-flex flex-wrap gap-2">
+                    <span class="text-muted small">載入中...</span>
+                </div>
+            </div>
             <div id="itemList"></div>
             <button type="button" class="btn btn-outline-line w-100 mb-4" onclick="addItemRow()">+ 增加一筆品項</button>
 
@@ -97,28 +175,37 @@
 <script src="https://chyuanwei.github.io/orderform/liff-id.js"></script>
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script>
+    /* 暫時註解：在 LINE 內建瀏覽器有時會在驗證過程加/刪斜線，若在 liff.init 前強行改網址易導致 liff.state 解析失敗
+    (function preventTrailingSlash404() {
+        var p = window.location.pathname;
+        if (p && p.length > 1 && p.charAt(p.length - 1) === "/") {
+            window.location.replace(window.location.origin + p.replace(/\/+$/, "") + (window.location.search || ""));
+            return;
+        }
+    })();
+    */
     var LIFF_ID = (function() {
         var urlParams = new URLSearchParams(window.location.search);
         var fromPath = getLiffIdFromUrl(window.location.hostname, window.location.pathname, null);
         var fromQuery = urlParams.get("liffId");
         var fromStorage = (typeof sessionStorage !== "undefined") ? sessionStorage.getItem("liffId") : null;
-        return fromPath || fromQuery || fromStorage || "2008892626-gElGdN7S";
+        return fromPath || fromQuery || fromStorage || "2008894056-qEWGY90B";
     })();
     const GAS_URL = "https://script.google.com/macros/s/AKfycbwRDNZrsmN2yBEi35KmkpcVjN88Dtom5X7FRVhCffFeeXCWbRiDylRmbqMUV3CqX9Uz-g/exec"; 
 
-    let productOptions = [];
+    let productOptions = [];      // 所有產品（含 name, category）
+    let allCategories = [];       // 所有分類
+    let selectedCategories = [];  // 使用者選擇的分類
     let currentPayload = null;
     let userProfile = null;
 
+    var PROD_BOT_ID = "U1e2d1ee2a09bd678fb29b4c60fd156d7";
     window.onload = async function() {
-        if (document.referrer && document.referrer.indexOf("2008894056") !== -1) {
-            window.location.replace("https://chyuanwei.github.io/orderform/placeOrder-test.html" + (window.location.search || ""));
-            return;
-        }
         var urlParams = new URLSearchParams(window.location.search);
         try {
             var qBotId = urlParams.get("botId");
             if (qBotId) sessionStorage.setItem("liffBotId", qBotId);
+            else sessionStorage.setItem("liffBotId", PROD_BOT_ID);
         } catch (e) {}
 
         var d = new Date();
@@ -127,8 +214,8 @@
         document.getElementById('shipDate').setAttribute('min', today);
 
         // 提前取得 botId，用於 fetch 產品清單時告知後端環境（測試/正式）
-        var urlBotId = urlParams.get("botId") || sessionStorage.getItem("liffBotId") || "";
-        var productListPromise = fetch(GAS_URL + (urlBotId ? '?botId=' + encodeURIComponent(urlBotId) : '')).then(function(r) { return r.json(); });
+        var urlBotId = urlParams.get("botId") || sessionStorage.getItem("liffBotId") || PROD_BOT_ID;
+        var productListPromise = fetch(GAS_URL + '?botId=' + encodeURIComponent(urlBotId)).then(function(r) { return r.json(); });
 
         try {
             if (!LIFF_ID) { console.error("無法取得 LIFF ID"); return; }
@@ -138,6 +225,7 @@
                     sessionStorage.setItem("liffId", LIFF_ID);
                     var botId = urlParams.get("botId");
                     if (botId) sessionStorage.setItem("liffBotId", botId);
+                    else sessionStorage.setItem("liffBotId", PROD_BOT_ID);
                 } catch (e) {}
                 liff.login();
                 return;
@@ -184,20 +272,26 @@
             }
 
             var data = await productListPromise;
-            // 相容新舊格式：新格式 { name, category }，舊格式 "產品名"
-            productOptions = Array.isArray(data) ? data.map(function(item) {
-                return typeof item === 'string' ? item : (item.name || item);
-            }) : [];
+            productOptions = Array.isArray(data) ? data : [];
+            
+            console.log('產品資料筆數:', productOptions.length);
+            console.log('產品資料範例:', productOptions.slice(0, 3));
+            
+            // 提取所有分類（去重）
+            var categorySet = new Set();
+            productOptions.forEach(function(item) {
+                if (item.category) categorySet.add(item.category);
+            });
+            allCategories = Array.from(categorySet);
+            
+            console.log('提取的分類:', allCategories);
+            
+            // 初始化分類過濾選單
+            initCategoryFilter();
+            
             addItemRow();
         } catch (err) {
             console.error(err);
-            var msg = (err && (err.message || err.toString())) || "";
-            var isTestContext = document.referrer && document.referrer.indexOf("2008894056") !== -1;
-            if (isTestContext && /invalid|liff|400|mismatch/i.test(msg)) {
-                try { sessionStorage.setItem("liffId", "2008894056-few4uzMm"); } catch (e) {}
-                window.location.replace("https://chyuanwei.github.io/orderform/placeOrder-test.html" + (window.location.search || ""));
-                return;
-            }
             try {
                 if (LIFF_ID) { sessionStorage.setItem("liffId", LIFF_ID); }
                 var botId = new URLSearchParams(window.location.search).get("botId");
@@ -208,6 +302,8 @@
         }
     };
 
+    var currentEditingRowId = null; // 記錄當前正在編輯的列
+
     function addItemRow() {
         const container = document.getElementById('itemList');
         const rowId = 'row_' + Date.now() + Math.floor(Math.random() * 1000);
@@ -215,10 +311,13 @@
             <div class="item-row" id="${rowId}">
                 <div class="row g-2">
                     <div class="col-7">
-                        <select class="form-select product-select" required>
-                            <option value="" disabled selected>請選擇品項...</option>
-                            ${productOptions.map(p => `<option value="${p}">${p}</option>`).join('')}
-                        </select>
+                        <input type="text" 
+                               class="form-control product-input" 
+                               placeholder="點擊選擇產品..."
+                               required 
+                               readonly
+                               data-row-id="${rowId}"
+                               onclick="openProductModal('${rowId}')">
                     </div>
                     <div class="col-3">
                         <input type="number" class="form-control product-count" value="1" min="1" required>
@@ -229,6 +328,118 @@
                 </div>
             </div>`;
         container.insertAdjacentHTML('beforeend', rowHtml);
+    }
+
+    // 初始化分類過濾按鈕
+    function initCategoryFilter() {
+        var container = document.getElementById('categoryButtons');
+        container.innerHTML = '';
+        
+        allCategories.forEach(function(cat) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm category-btn-unselected';
+            btn.textContent = cat;
+            btn.setAttribute('data-category', cat);
+            btn.onclick = function() { toggleCategory(cat); };
+            container.appendChild(btn);
+        });
+    }
+    
+    // 切換分類選擇
+    function toggleCategory(category) {
+        var btn = document.querySelector('[data-category="' + category.replace(/"/g, '\\"') + '"]');
+        if (!btn) {
+            console.error('找不到按鈕：', category);
+            return;
+        }
+        
+        var idx = selectedCategories.indexOf(category);
+        console.log('切換分類：', category, '當前狀態：', idx === -1 ? '未選中' : '已選中');
+        
+        if (idx === -1) {
+            // 未選中 → 選中
+            selectedCategories.push(category);
+            btn.className = 'btn btn-sm category-btn-selected';
+            btn.blur(); // 移除焦點，避免 :focus 狀態干擾
+            console.log('設定為已選中');
+        } else {
+            // 已選中 → 取消
+            selectedCategories.splice(idx, 1);
+            btn.className = 'btn btn-sm category-btn-unselected';
+            btn.blur(); // 移除焦點
+            console.log('設定為未選中');
+        }
+        
+        console.log('當前已選分類：', selectedCategories);
+        updateAllProductSelects();
+    }
+
+    // 開啟產品選擇模態框
+    function openProductModal(rowId) {
+        if (selectedCategories.length === 0) {
+            alert('請先選擇分類');
+            return;
+        }
+        
+        currentEditingRowId = rowId;
+        var modal = document.getElementById('productModal');
+        var searchInput = document.getElementById('modalSearchInput');
+        
+        searchInput.value = '';
+        renderModalProducts('');
+        
+        modal.style.display = 'flex';
+    }
+    
+    // 關閉產品選擇模態框
+    function closeProductModal() {
+        var modal = document.getElementById('productModal');
+        modal.style.display = 'none';
+        currentEditingRowId = null;
+    }
+    
+    // 渲染模態框中的產品清單
+    function renderModalProducts(searchKeyword) {
+        var container = document.getElementById('modalProductList');
+        var keyword = searchKeyword || '';
+        
+        var filtered = productOptions.filter(function(item) {
+            var matchCategory = selectedCategories.includes(item.category);
+            var matchSearch = keyword === '' || item.name.toLowerCase().includes(keyword.toLowerCase());
+            return matchCategory && matchSearch;
+        });
+        
+        if (filtered.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center">查無符合的產品</p>';
+        } else {
+            container.innerHTML = filtered.map(function(p) {
+                return '<div class="product-option" onclick="selectProduct(\'' + p.name.replace(/'/g, "\\'") + '\')">' + p.name + '</div>';
+            }).join('');
+        }
+    }
+    
+    // 過濾模態框中的產品
+    function filterModalProducts() {
+        var keyword = document.getElementById('modalSearchInput').value;
+        renderModalProducts(keyword);
+    }
+    
+    // 選擇產品
+    function selectProduct(productName) {
+        if (!currentEditingRowId) return;
+        
+        var input = document.querySelector('#' + currentEditingRowId + ' .product-input');
+        if (input) {
+            input.value = productName;
+        }
+        
+        closeProductModal();
+    }
+    
+    // 更新所有品項（分類變更時）- 不需要做任何事，因為模態框會即時過濾
+    function updateAllProductSelects() {
+        // 保留此函式，以免其他地方有呼叫
     }
 
     function removeRow(id) {
@@ -247,12 +458,12 @@
             const items = [];
             document.querySelectorAll('.item-row').forEach(row => {
                 items.push({
-                    name: row.querySelector('.product-select').value,
+                    name: row.querySelector('.product-input').value,
                     count: row.querySelector('.product-count').value
                 });
             });
             const urlParams = new URLSearchParams(window.location.search);
-            const botIdFromUrl = urlParams.get('botId') || (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("liffBotId") : null) || "LIFF_DEFAULT";
+            const botIdFromUrl = urlParams.get('botId') || (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("liffBotId") : null) || PROD_BOT_ID;
             const isPc = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             currentPayload = {
                 destination: botIdFromUrl,
@@ -260,7 +471,7 @@
                 shopName: document.getElementById('shopName').value,
                 ordererName: document.getElementById('ordererName').value,
                 shipDate: document.getElementById('shipDate').value,
-                remark: document.getElementById('remark').value, // 取得備註內容
+                remark: document.getElementById('remark').value,
                 items: items,
                 userId: userProfile ? userProfile.userId : "",
                 isPc: isPc
@@ -303,7 +514,6 @@ async function handleFinalSubmit() {
 
             if (liff.isInClient()) {
                 const itemsMsg = currentPayload.items.map(i => `・${i.name} x ${i.count}`).join('\n');
-                // 訊息加入備註欄位
                 const fullMsg = `【Line表單】訂單已送出：\n--------------------\n下單日期：${currentPayload.orderDate}\n店家名稱：${currentPayload.shopName}\n訂購人：${currentPayload.ordererName}\n預計出貨日：${currentPayload.shipDate}\n備註：${currentPayload.remark || '無'}\n--------------------\n訂購明細：\n${itemsMsg}`;
 
                 try {
