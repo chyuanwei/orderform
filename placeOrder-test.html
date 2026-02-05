@@ -49,6 +49,7 @@
                     <input type="text" class="form-control readonly-field" id="shopName" required placeholder="載入中..." readonly>
                     <button type="button" class="btn btn-outline-secondary" id="editShopNameBtn" style="display:none;" onclick="enableShopNameEdit()">✏️ 編輯</button>
                 </div>
+                <small class="text-muted" id="shopNameHint" style="display:none;">第一次使用，請填寫您的店家名稱，之後會自動帶入</small>
             </div>
             <div class="mb-3">
                 <label class="form-label small text-muted">訂購人 (LINE)</label>
@@ -178,13 +179,15 @@
                     } else {
                         // 找不到資料：移除 readonly，讓使用者填寫
                         document.getElementById('shopName').readOnly = false;
-                        document.getElementById('shopName').placeholder = '請輸入店名，下次會自動記憶。';
+                        document.getElementById('shopName').placeholder = '請輸入店名';
+                        document.getElementById('shopNameHint').style.display = 'block';
                         console.log('未找到店家名稱，使用者需手動填寫');
                     }
                 } catch (e) {
                     // 查詢失敗：移除 readonly，讓使用者填寫
                     document.getElementById('shopName').readOnly = false;
-                    document.getElementById('shopName').placeholder = '請輸入店名，下次會自動記憶。';
+                    document.getElementById('shopName').placeholder = '請輸入店名';
+                    document.getElementById('shopNameHint').style.display = 'block';
                     console.warn('查詢店家名稱失敗：' + e.message);
                 }
             }
