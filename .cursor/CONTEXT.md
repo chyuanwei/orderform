@@ -131,9 +131,10 @@
   - **`PRODUCT_LIST_REFRESH_SECONDS`**（正式環境，預設 360 分鐘 = 6 小時）
   - **`PRODUCT_LIST_REFRESH_SECONDS_TEST`**（測試環境，預設 60 分鐘 = 1 小時）
   - 設為 `0` 表示**停用快取**（每次都重讀試算表）
-  - `doGet` 依請求的 `botId` 參數判斷環境（`U7d234a2a4346dc8722c343c9cde29652` = 測試）
+  - `doGet` 依請求的 `?botId=` 參數判斷環境（`U7d234a2a4346dc8722c343c9cde29652` = 測試）
+  - 前端 `placeOrder.html` / `placeOrder-test.html` 在 `fetch(GAS_URL + '?botId=' + urlBotId)` 時會帶上 `botId`，讓後端正確判斷環境
   - 過期或停用時重讀試算表；未過期則直接回傳快取（約數十 ms，不開試算表）
-  - 單一 value 約 9KB 上限，超過會寫入失敗但仍回傳結果。**前端無快取**，每次頁面載入都打 `fetch(GAS_URL)` → doGet（但多半命中後端快取）。
+  - 單一 value 約 9KB 上限，超過會寫入失敗但仍回傳結果。**前端無快取**，每次頁面載入都打 `fetch(GAS_URL + '?botId=...')` → doGet（但多半命中後端快取）。
 - **Log_Mode**（指令碼屬性）：控制 DebugLog 寫入。`0`=不寫；`1`=僅營運等級（系統繁忙、發現待處理訂單、AI/處理異常、Ragic 同步失敗）；`2` 或未設定=營運+除錯（含 doGet/doPost、botId、payload 等）。`logToSheet(msg, level)` 依此決定是否寫入。
 - **logcleanRules**：試算表工作表「logcleanRules」，欄位 A=訊息內容、B=比對方式(exact/startsWith)、C=僅在該小時(0-23 或留空)。`cleanDebugLogAndLeaveTrace` 依此清理 DebugLog；無表或為空時使用內建預設規則（移除「暫無資料須處理!」每小時、移除「[系統自動清理]：」於 6 點）。
 
