@@ -278,6 +278,10 @@
         var today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         document.getElementById('orderDate').value = today;
         document.getElementById('shipDate').setAttribute('min', today);
+        
+        // 測試環境：備註預設值 = '測試{HH:MM}'
+        var timeStr = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        document.getElementById('remark').value = '測試' + timeStr;
 
         // 提前取得 botId，用於 fetch 產品清單時告知後端環境（測試/正式）
         var urlBotId = urlParams.get("botId") || sessionStorage.getItem("liffBotId") || TEST_BOT_ID;
@@ -316,11 +320,11 @@
                     var shopNameResponse = await fetch(GAS_URL + '?action=getShopName&username=' + encodeURIComponent(userProfile.displayName || ""));
                     var shopNameData = await shopNameResponse.json();
                     if (shopNameData && shopNameData.shopName) {
-                        // 找到資料：自動帶入 + 保持 readonly + 顯示編輯按鈕
-                        document.getElementById('shopName').value = shopNameData.shopName;
+                        // 找到資料：自動帶入 + 測試環境加上 '-測試' 後綴 + 保持 readonly + 顯示編輯按鈕
+                        document.getElementById('shopName').value = shopNameData.shopName + '-測試';
                         document.getElementById('shopName').placeholder = '';
                         document.getElementById('editShopNameBtn').style.display = 'block';
-                        console.log('已自動帶入店家名稱：' + shopNameData.shopName);
+                        console.log('已自動帶入店家名稱：' + shopNameData.shopName + '-測試');
                     } else {
                         // 找不到資料：移除 readonly，讓使用者填寫
                         document.getElementById('shopName').readOnly = false;
