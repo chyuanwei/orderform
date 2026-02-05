@@ -335,18 +335,21 @@
             // 未選中 → 選中
             selectedCategories.push(category);
             btn.className = 'btn btn-primary btn-sm';
-            console.log('設定為已選中，className:', btn.className);
+            // 直接設定 inline style 確保手機瀏覽器正確顯示
+            btn.style.backgroundColor = '#0d6efd';
+            btn.style.borderColor = '#0d6efd';
+            btn.style.color = '#fff';
+            console.log('設定為已選中');
         } else {
             // 已選中 → 取消
             selectedCategories.splice(idx, 1);
             btn.className = 'btn btn-outline-primary btn-sm';
-            console.log('設定為未選中，className:', btn.className);
+            // 清除 inline style，回到 class 控制
+            btn.style.backgroundColor = '';
+            btn.style.borderColor = '';
+            btn.style.color = '';
+            console.log('設定為未選中');
         }
-        
-        // 強制重繪（手機瀏覽器修正）
-        btn.style.display = 'none';
-        btn.offsetHeight; // 觸發 reflow
-        btn.style.display = '';
         
         console.log('當前已選分類：', selectedCategories);
         updateAllProductSelects();
