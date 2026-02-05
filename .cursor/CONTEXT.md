@@ -44,9 +44,12 @@
 
 ### 產品清單（placeOrder 前端）
 
-- **來源**：GAS `doGet` → 試算表「**Ragic 對照表**」**C 欄**，第 2 列～倒數第 2 列，原樣回傳給前端顯示。
+- **來源**：GAS `doGet` → 試算表「**Ragic 對照表**」**C 欄（產品名稱）+ D 欄（分類）**，第 2 列～倒數第 2 列，回傳 JSON 格式：`[{ name: "產品名", category: "分類" }, ...]`。
 - **快取**：`doGet` 使用 **PropertiesService.getScriptProperties()** 儲存產品清單，key `productList_C`（JSON 字串）、`productList_C_updatedAt`（上次更新時間，秒）。過期間隔由 `Main.js` 常數 **`PRODUCT_LIST_REFRESH_SECONDS`** 決定（預設 6 小時 = 21600 秒）；超過間隔後下一次 doGet 會從試算表重讀並更新 Properties。**正式與測試環境共用**同一 GAS、同一產品清單與快取。
-- **前端**：`placeOrder.html` / `placeOrder-test.html` 在 onload **一開始**即發起 `fetch(GAS_URL)`（與 liff.init、getProfile 並行），需要時再 await 取得 JSON 陣列作為下拉選單；使用者選 C 欄送出。
+- **前端**：`placeOrder.html` / `placeOrder-test.html` 在 onload **一開始**即發起 `fetch(GAS_URL + '?botId=' + urlBotId)`（與 liff.init、getProfile 並行），需要時再 await 取得產品清單（含分類資料）。
+  - **分類過濾**：提取所有分類（去重）→ 顯示為多選按鈕組 → 使用者可選擇多個分類
+  - **產品選擇**：點擊產品輸入框 → 開啟大版面 Modal → 依已選分類過濾產品 → 可搜尋 → 點選後填入
+  - **使用者選擇**：C 欄產品名稱送出
 - **後端入口**：`handleLiffOrder` 收到 payload 後**第一時間**用 `getRagicCToBMap()` 把 `payload.items[].name`（C 欄）轉成 B 欄，其餘流程不變。
 - **寫入試算表與 Ragic**：一律使用已轉好的 **B 欄**（`getRagicNameMap`、`sendToRagicAPI` 等後端邏輯不需改動）。
 
@@ -126,7 +129,7 @@
 - **GAS 部署 URL**：由 GAS 專案「部署」取得；`placeOrder.html` 內 `GAS_URL` 需與實際一致。
 - **試算表、Ragic、API Key**：在 GAS 專案屬性（PropertiesService）與 `Config.js` 常數中設定。
 - **botId ↔ OA 名稱**：GAS **指令碼屬性**，key 為 `OA_CONFIG_JSON`，value 為 JSON 字串，格式 `{ "botId": { "name": "OA名稱", "token": "..." }, ... }`。PC 下單時由 Main.js 依 `isPc===true` 標記為「PC下單+OA名稱」。
-- **Ragic 對照表**：試算表工作表 `Ragic 對照表`，**A 欄**=標準名稱，**B 欄**=Ragic 用名稱，**C 欄**=前端顯示用；doGet 回傳 C 欄，handleLiffOrder 入口用 `getRagicCToBMap()`（C→B）轉換後再往下流程。
+- **Ragic 對照表**：試算表工作表 `Ragic 對照表`，**A 欄**=標準名稱，**B 欄**=Ragic 用名稱，**C 欄**=前端顯示用，**D 欄**=分類；doGet 回傳 `[{ name: C欄, category: D欄 }, ...]`，handleLiffOrder 入口用 `getRagicCToBMap()`（C→B）轉換後再往下流程。
 - **產品清單快取**：`doGet` 使用 **Script Properties**（`productList_C` = JSON 字串、`productList_C_updatedAt` = Unix 秒數）儲存 C 欄清單。快取時間由**指令碼屬性**控制（單位：分鐘）：
   - **`PRODUCT_LIST_REFRESH_SECONDS`**（正式環境，預設 360 分鐘 = 6 小時）
   - **`PRODUCT_LIST_REFRESH_SECONDS_TEST`**（測試環境，預設 60 分鐘 = 1 小時）
@@ -144,10 +147,18 @@
 
 - **liff-id.js**（根目錄）：`getLiffIdFromUrl(hostname, pathname, fallback)`。當 `hostname === "liff.line.me"` 時從 pathname 用正則 `/^\/([^/]+)(?:\/|$)/` 取 LIFF ID（支援 `/{liffId}/placeOrder.html` 與 `/{liffId}`）；非 liff.line.me 時回傳 fallback。**不 hardcode 單一 LIFF ID**，可同時支援多個 LIFF App（如 2008894056、2008892626）。有單元測試 `gas/__tests__/liff-id.test.js`。
 - **index.html**：先載入 `liff-id.js`，再 `getLiffIdFromUrl(hostname, pathname, fallback)` 取得 liffId 後 `liff.init`；已登入則轉 `placeOrder.html`（只帶 `?botId=xxx`）；init 失敗且為 OAuth callback 時仍嘗試轉訂單頁。
-- **placeOrder.html** / **placeOrder-test.html**：先載入 `liff-id.js`，再以 `getLiffIdFromUrl` 取得 LIFF_ID 後 `liff.init`；以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`、`isPc`。產品清單在 onload 一開始即並行 `fetch(GAS_URL)`，與 init/getProfile 同時進行；清單為 C 欄、送出後後端轉 B 欄。**下單日期**用當地日期（`getFullYear`/`getMonth`/`getDate`），不用 `toISOString`，避免 UTC 導致台灣等時區少一天。
+- **placeOrder.html** / **placeOrder-test.html**：先載入 `liff-id.js`，再以 `getLiffIdFromUrl` 取得 LIFF_ID 後 `liff.init`；以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`、`isPc`。產品清單在 onload 一開始即並行 `fetch(GAS_URL + '?botId=' + urlBotId)`，與 init/getProfile 同時進行；清單為含 `{ name, category }` 的結構化資料、送出後後端轉 B 欄。**下單日期**用當地日期（`getFullYear`/`getMonth`/`getDate`），不用 `toISOString`，避免 UTC 導致台灣等時區少一天。
+  - **產品選擇 UI（測試與正式環境皆已啟用）**：
+    - **分類過濾按鈕組**：提取產品的 `category` 欄位（去重）→ 生成多選按鈕組（`category-btn-selected` / `category-btn-unselected`），可點選多個分類。按鈕使用自訂 CSS class 搭配 `!important` 強制覆蓋 Bootstrap 的 `:active`/`:focus`/`:hover` 狀態，並在切換後呼叫 `btn.blur()` 移除焦點，修正手機瀏覽器（特別是 LINE 內建瀏覽器）點擊後顏色延遲更新的問題。
+    - **大版面產品選單 Modal**：點擊產品輸入框（readonly）→ 檢查是否已選分類 → 開啟全螢幕模態框（90% 螢幕寬度、80vh 高度）→ 顯示搜尋框（`product-search-input`）+ 產品清單（依已選分類過濾）→ 可即時搜尋（關鍵字 AND 分類）→ 點選產品後自動填入並關閉 Modal。
+    - **CSS 樣式**：`category-btn-selected`（藍底白字）、`category-btn-unselected`（白底藍邊）、`.product-modal`（模態框）、`.product-option`（產品選項大按鈕）。
+    - **手機友善設計**：大按鈕（15px padding）、易於點擊、視覺回饋明確、無需鍵盤快捷鍵。
 - **placeOrder.html（正式）**：若 referrer 含 2008894056 則一進頁即導向 placeOrder-test。onload 一開始若 URL 有 `botId` 即寫入 sessionStorage（以目前頁為準）。`liff.init` 失敗時：僅在 **isTestContext** 時才導向測試頁；否則嘗試 **liff.login()**，不可用再顯示錯誤。
 - **placeOrder-test.html（測試）**：onload 一開始若 URL 有 `botId` 寫入 sessionStorage，**若無**（如 OAuth 回傳 `?code=...&state=...`）則寫入測試 botId `TEST_BOT_ID`（U7d234a2a4346dc8722c343c9cde29652）；送單時 `destination` fallback 為 `TEST_BOT_ID` 而非 `LIFF_DEFAULT`。確保從測試頁送單時後端收到測試 botId，Ragic 註解顯示「泉威官方Line測試」等測試用 OA 名稱；不影響手機 LINE 有帶 botId 的正常流程。
-  - **好友名單功能**（測試環境專用）：`liff.getProfile()` 後，用 `displayName` 呼叫 `doGet?action=getShopName&username=xxx` 查詢「好友名單」sheet（B 欄比對 username，取 C 欄店家名稱）。找到 → 自動帶入「店家名稱」欄位並設為 readonly，顯示「✏️ 編輯」按鈕可解鎖；找不到 → 欄位空白可填寫。送單時，後端 `handleLiffOrder` 用 `ordererName` 查「好友名單」B 欄，找不到則新增一筆（A=userId, B=username, C=shopName, D=shopName-username）。
+  - **好友名單功能**（測試與正式環境皆已啟用）：`liff.getProfile()` 後，用 `displayName` 呼叫 `doGet?action=getShopName&username=xxx` 查詢「好友名單」sheet（B 欄比對 username，取 C 欄店家名稱）。找到 → 自動帶入「店家名稱」欄位並設為 readonly，顯示「✏️ 編輯」按鈕可解鎖（點擊後需 confirm 確認）；找不到 → 欄位初始為 readonly + placeholder "載入中..."，查無結果後移除 readonly、改 placeholder 為「請輸入店名」、顯示提示文字「第一次使用，請填寫您的店家名稱，之後會自動帶入」。送單時，後端 `handleLiffOrder` 判斷 `botId === TEST_BOT_ID || botId === PROD_BOT_ID` 時呼叫 `updateShopNameInFriendList()`，用 `ordererName` 查「好友名單」B 欄：
+    - 找到 → 檢查 C 欄（shopName）和 A 欄（userId）是否需更新，有變更才寫入（更新 C、D、或補填 A）
+    - 找不到 → 新增一筆（A=userId, B=username, C=shopName, D=shopName-username）
+    - 後端函式名稱：`updateShopNameInFriendList(ss, username, userId, shopName)`（位於 `LiffOrderService.js`）
 
 ---
 
@@ -166,6 +177,8 @@
 | **Webhook 訊息未寫入 RawData** | `handleLineMessage` 曾在函式開頭誤用未宣告的 `userMessage`（ReferenceError）導致整段中斷；已改為在 event 內取得 `txt` 後才做 `【Line表單】/【Line表單-測試】` 過濾，且僅跳過該 event，不影響 RawData 寫入。 |
 | **訊息轉訂單卡在「待同步」** | `uploadOrdersToRagic()` 原本僅在成功時寫回「已同步Ragic」，失敗時不留痕跡；已改為在同步失敗時用 `logToSheet(..., 1)` 記錄 `status/httpCode/msg` 與列號，便於追查 Ragic API（401/403、非 JSON 回傳等）。LIFF 即時同步失敗也會寫入 DebugLog（level 1）。 |
 | **測試環境送單 Ragic 顯示正式 OA 名稱** | OAuth 回傳 URL 無 botId，送單時若 sessionStorage 為先前正式頁留下的 botId 會帶錯。已改：兩頁 onload 一開始依 URL 寫入 botId；測試頁無 botId 時寫入/fallback 為測試 botId（TEST_BOT_ID），Ragic 註解即為 OA_CONFIG 中該 botId 的 name。 |
+
+|| **手機分類按鈕顏色切換問題** | 手機瀏覽器（特別是 LINE 內建瀏覽器）點擊分類按鈕時，會出現「閃一下變淡，點其他地方才生效」的問題。原因是 Bootstrap 的 `:active` 和 `:focus` 偽類樣式覆蓋了 className 變更，導致視覺不同步。解決方式：(1) 使用自訂 CSS class（`category-btn-selected`/`category-btn-unselected`）搭配 `!important` 強制覆蓋所有狀態（`:active`、`:focus`、`:hover`）；(2) 切換後呼叫 `btn.blur()` 立即移除焦點狀態。 |
 
 ---
 
