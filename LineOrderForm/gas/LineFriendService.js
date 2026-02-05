@@ -37,12 +37,6 @@ function syncLineFollowersToSheet() {
   }
 }
 
-function updateFriendList(ss, uid, name) {
-  let friendSheet = ss.getSheetByName('好友名單') || ss.insertSheet('好友名單').appendRow(['uid', 'name']);
-  const isExist = friendSheet.getDataRange().getValues().some(row => row[0] === uid);
-  if (!isExist) friendSheet.appendRow([uid, name]);
-}
-
 function getUserMap() {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName('好友名單');

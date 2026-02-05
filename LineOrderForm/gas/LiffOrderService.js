@@ -13,7 +13,7 @@ function handleLiffOrder(payload) {
   // 檢查並更新好友名單（僅測試環境 botId）
   const TEST_BOT_ID = "U7d234a2a4346dc8722c343c9cde29652";
   if (payload.ordererName && botId === TEST_BOT_ID) {
-    updateFriendList(ss, payload.ordererName, payload.userId, payload.shopName);
+    updateShopNameInFriendList(ss, payload.ordererName, payload.userId, payload.shopName);
   }
   let itemsSummary;
   const orderTime = new Date();
@@ -107,9 +107,9 @@ function handleLiffOrder(payload) {
 }
 
 /**
- * 更新好友名單：檢查 username 是否存在，不存在則新增，存在則更新店家名稱
+ * 更新好友名單的店家名稱：檢查 username 是否存在，不存在則新增，存在則更新店家名稱
  */
-function updateFriendList(ss, username, userId, shopName) {
+function updateShopNameInFriendList(ss, username, userId, shopName) {
   try {
     const friendSheet = ss.getSheetByName(FRIEND_LIST_SHEET_NAME);
     if (!friendSheet) {
@@ -148,9 +148,9 @@ function updateFriendList(ss, username, userId, shopName) {
     ]);
     logToSheet(`好友名單新增：username=${username}, 店家=${shopName}`, 1);
   } catch (err) {
-    console.error("updateFriendList 發生錯誤: " + err.message);
+    console.error("updateShopNameInFriendList 發生錯誤: " + err.message);
     if (typeof logToSheet === "function") {
-      logToSheet("updateFriendList 錯誤: " + err.toString(), 1);
+      logToSheet("updateShopNameInFriendList 錯誤: " + err.toString(), 1);
     }
   }
 }
