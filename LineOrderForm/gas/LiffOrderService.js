@@ -123,17 +123,33 @@ function updateShopNameInFriendList(ss, username, userId, shopName) {
     // 檢查 B 欄是否已有此 username
     for (let i = 1; i < data.length; i++) {
       if (data[i][1] && String(data[i][1]).trim() === username.trim()) {
-        // 已存在：檢查店家名稱是否有變更
+        // 已存在：檢查是否需要更新
+        const oldUserId = data[i][0] ? String(data[i][0]).trim() : "";
         const oldShopName = data[i][2] ? String(data[i][2]).trim() : "";
         const newShopName = shopName ? String(shopName).trim() : "";
         
+        let needUpdate = false;
+        let updateMsg = [];
+        
+        // 檢查並更新 userId（如果原本是空的）
+        if (!oldUserId && userId) {
+          friendSheet.getRange(i + 1, 1).setValue(userId);  // A 欄
+          needUpdate = true;
+          updateMsg.push(`userId: 空 → ${userId}`);
+        }
+        
+        // 檢查並更新店家名稱
         if (oldShopName !== newShopName) {
-          // 店家名稱有變更，更新 C 欄和 D 欄
           friendSheet.getRange(i + 1, 3).setValue(shopName || "");  // C 欄
           friendSheet.getRange(i + 1, 4).setValue(combinedName);    // D 欄
-          logToSheet(`好友名單已更新：username=${username}, 舊店家=${oldShopName}, 新店家=${newShopName}`, 1);
+          needUpdate = true;
+          updateMsg.push(`店家: ${oldShopName} → ${newShopName}`);
+        }
+        
+        if (needUpdate) {
+          logToSheet(`好友名單已更新：username=${username}, ${updateMsg.join(', ')}`, 1);
         } else {
-          logToSheet(`好友名單已存在 username: ${username}，店家名稱相同，不更新`, 2);
+          logToSheet(`好友名單已存在 username: ${username}，無需更新`, 2);
         }
         return;
       }
