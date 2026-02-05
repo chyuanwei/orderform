@@ -122,7 +122,9 @@
         document.getElementById('orderDate').value = today;
         document.getElementById('shipDate').setAttribute('min', today);
 
-        var productListPromise = fetch(GAS_URL).then(function(r) { return r.json(); });
+        // 提前取得 botId，用於 fetch 產品清單時告知後端環境（測試/正式）
+        var urlBotId = urlParams.get("botId") || sessionStorage.getItem("liffBotId") || "";
+        var productListPromise = fetch(GAS_URL + (urlBotId ? '?botId=' + encodeURIComponent(urlBotId) : '')).then(function(r) { return r.json(); });
 
         try {
             if (!LIFF_ID) { console.error("無法取得 LIFF ID"); return; }
