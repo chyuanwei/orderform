@@ -184,7 +184,10 @@
             }
 
             var data = await productListPromise;
-            productOptions = Array.isArray(data) ? data : [];
+            // 相容新舊格式：新格式 { name, category }，舊格式 "產品名"
+            productOptions = Array.isArray(data) ? data.map(function(item) {
+                return typeof item === 'string' ? item : (item.name || item);
+            }) : [];
             addItemRow();
         } catch (err) {
             console.error(err);
