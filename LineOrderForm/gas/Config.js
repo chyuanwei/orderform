@@ -12,7 +12,10 @@ const PRODUCT_SHEET_NAME = '產品名稱對照表';
 const RAGIC_ACCOUNT = 'chyuanwei'; 
 const RAGIC_API_KEY = PropertiesService.getScriptProperties().getProperty('RAGIC_API_KEY');
 const RAGIC_URL = `https://ap14.ragic.com/${RAGIC_ACCOUNT}/ragicsales-order-management/1?v=3`;
-const RAGIC_MAPPING_SHEET_NAME = 'Ragic 對照表'; 
+const RAGIC_MAPPING_SHEET_NAME = 'Ragic 對照表';
+
+// 好友名單配置（測試環境用）
+const FRIEND_LIST_SHEET_NAME = '好友名單'; 
 
 // 全域變數宣告
 var botId;

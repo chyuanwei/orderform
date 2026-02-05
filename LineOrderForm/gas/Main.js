@@ -50,10 +50,18 @@ function doPost(e) {
  * - PRODUCT_LIST_REFRESH_SECONDS：正式環境快取時間（分鐘），預設 360 分鐘（6 小時）
  * - PRODUCT_LIST_REFRESH_SECONDS_TEST：測試環境快取時間（分鐘），預設 60 分鐘（1 小時）
  * - 設為 0 表示停用快取（每次都重讀試算表）
+ * 
+ * 支援 action 參數：
+ * - action=getShopName&username=xxx：查詢好友名單，回傳店家名稱
  */
 function doGet(e) {
   logToSheet("doGet", 2);
   try {
+    // 檢查是否為 getShopName 請求
+    const action = e && e.parameter && e.parameter.action ? e.parameter.action : "";
+    if (action === "getShopName") {
+      return handleGetShopName(e);
+    }
     const prop = PropertiesService.getScriptProperties();
     
     // 判斷是否為測試環境（從 URL 參數 botId 或請求來源判斷）
@@ -109,5 +117,41 @@ function doGet(e) {
   } catch (err) {
     console.error("doGet 發生錯誤: " + err.message);
     return returnJson({ error: err.message });
+  }
+}
+
+/**
+ * 處理 getShopName 請求：依 username 查詢好友名單，回傳店家名稱
+ */
+function handleGetShopName(e) {
+  logToSheet("handleGetShopName", 2);
+  try {
+    const username = e && e.parameter && e.parameter.username ? e.parameter.username : "";
+    if (!username) {
+      return returnJson({ shopName: null, error: "缺少 username 參數" });
+    }
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const friendSheet = ss.getSheetByName(FRIEND_LIST_SHEET_NAME);
+    if (!friendSheet) {
+      logToSheet("找不到『好友名單』分頁", 2);
+      return returnJson({ shopName: null });
+    }
+
+    const data = friendSheet.getDataRange().getValues();
+    // 從第 2 列開始（跳過標題），B 欄為 username，C 欄為店家名稱
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][1] && String(data[i][1]).trim() === username.trim()) {
+        const shopName = data[i][2] ? String(data[i][2]).trim() : null;
+        logToSheet(`找到 username: ${username}, 店家名稱: ${shopName}`, 2);
+        return returnJson({ shopName: shopName });
+      }
+    }
+
+    logToSheet(`未找到 username: ${username}`, 2);
+    return returnJson({ shopName: null });
+  } catch (err) {
+    console.error("handleGetShopName 發生錯誤: " + err.message);
+    return returnJson({ shopName: null, error: err.message });
   }
 }

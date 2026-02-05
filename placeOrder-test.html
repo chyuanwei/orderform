@@ -45,7 +45,10 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">店家名稱<span class="req">*</span></label>
-                <input type="text" class="form-control" id="shopName" required placeholder="請輸入店名">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="shopName" required placeholder="請輸入店名">
+                    <button type="button" class="btn btn-outline-secondary" id="editShopNameBtn" style="display:none;" onclick="enableShopNameEdit()">✏️ 編輯</button>
+                </div>
             </div>
             <div class="mb-3">
                 <label class="form-label small text-muted">訂購人 (LINE)</label>
@@ -161,6 +164,22 @@
             }
             if (userProfile) {
                 document.getElementById('ordererName').value = userProfile.displayName || "";
+                
+                // 查詢好友名單，自動帶入店家名稱
+                try {
+                    var shopNameResponse = await fetch(GAS_URL + '?action=getShopName&username=' + encodeURIComponent(userProfile.displayName || ""));
+                    var shopNameData = await shopNameResponse.json();
+                    if (shopNameData && shopNameData.shopName) {
+                        document.getElementById('shopName').value = shopNameData.shopName;
+                        document.getElementById('shopName').readOnly = true;
+                        document.getElementById('editShopNameBtn').style.display = 'block';
+                        console.log('已自動帶入店家名稱：' + shopNameData.shopName);
+                    } else {
+                        console.log('未找到店家名稱，使用者需手動填寫');
+                    }
+                } catch (e) {
+                    console.warn('查詢店家名稱失敗：' + e.message);
+                }
             }
 
             var data = await productListPromise;
@@ -287,6 +306,13 @@ async function handleFinalSubmit() {
                 }
             }
         }, 800);
+    }
+
+    // 啟用店家名稱編輯
+    function enableShopNameEdit() {
+        document.getElementById('shopName').readOnly = false;
+        document.getElementById('shopName').focus();
+        document.getElementById('editShopNameBtn').style.display = 'none';
     }
 </script>
 </body>

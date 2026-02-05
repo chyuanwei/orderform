@@ -9,6 +9,11 @@ function handleLiffOrder(payload) {
   });
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  
+  // 檢查並更新好友名單（測試環境功能）
+  if (payload.ordererName) {
+    updateFriendList(ss, payload.ordererName, payload.userId, payload.shopName);
+  }
   let itemsSummary;
   const orderTime = new Date();
   const formatOrderTime = Utilities.formatDate(orderTime, "GMT+8", "yyyy/MM/dd HH:mm:ss");
@@ -98,4 +103,41 @@ function handleLiffOrder(payload) {
   
   return ContentService.createTextOutput("Success")
     .setMimeType(ContentService.MimeType.TEXT);
+}
+
+/**
+ * 更新好友名單：檢查 username 是否存在，不存在則新增
+ */
+function updateFriendList(ss, username, userId, shopName) {
+  try {
+    const friendSheet = ss.getSheetByName(FRIEND_LIST_SHEET_NAME);
+    if (!friendSheet) {
+      logToSheet("找不到『好友名單』分頁，跳過更新", 2);
+      return;
+    }
+
+    const data = friendSheet.getDataRange().getValues();
+    // 檢查 B 欄是否已有此 username
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][1] && String(data[i][1]).trim() === username.trim()) {
+        logToSheet(`好友名單已存在 username: ${username}，不新增`, 2);
+        return;
+      }
+    }
+
+    // 不存在，新增一筆資料
+    const combinedName = shopName && username ? `${shopName}-${username}` : "";
+    friendSheet.appendRow([
+      userId || "",           // A 欄：uid
+      username || "",         // B 欄：username
+      shopName || "",         // C 欄：店家名稱
+      combinedName            // D 欄：店家-username
+    ]);
+    logToSheet(`好友名單新增：username=${username}, 店家=${shopName}`, 1);
+  } catch (err) {
+    console.error("updateFriendList 發生錯誤: " + err.message);
+    if (typeof logToSheet === "function") {
+      logToSheet("updateFriendList 錯誤: " + err.toString(), 1);
+    }
+  }
 }
