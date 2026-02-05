@@ -88,28 +88,58 @@
 
 | 項目 | 說明 |
 |------|------|
-| **go** / **commit and push** | 同義：一律包含 **GitHub**（git add / commit / push）**與 GAS**（`cd LineOrderForm/gas` → `npx clasp push`），兩邊都要執行。 |
+| **go** | 等同 **執行 + 更新**：執行當下需求（改 code、測試等）→ commit/push GitHub → clasp push GAS → 更新 `.cursor/CONTEXT.md` → 提供 **Comment for deploy**。 |
 | **GAS 更新** | 凡修改 `LineOrderForm/gas/**/*.js`，回覆結尾須附 **Comment for deploy**（見 `.cursor/rules/gas-deploy-comment.mdc`）。 |
 | **GAS 執行 vs 版本控制** | 實際執行在 GAS 平台（clasp push）；GitHub 用於版本控制、備份與協作。 |
-| **Utils.js** | 含 `filterDebugRows` 抽離供 Jest 測試；`if (typeof module...)` 區塊僅 Node 執行，GAS 不執行。 |
+| **Utils.js** | 含 `filterDebugRows`、`logToSheet` 等抽離供 Jest 測試；`if (typeof module...)` 區塊僅 Node 執行，GAS 不執行。 |
 | **.clasp.json** | 已列入 .gitignore，勿提交；換機器或目錄時需修正 `rootDir`。 |
 | **分析後先問再改** | 分析完問題或提出解法後，**須先詢問使用者意見**，經同意後才執行修改；不得直接進行程式修改。 |
 
 ---
 
-## 6. 重要設定與路徑（參考用）
+## 6. 測試/正式環境分離策略（未來可採用）
 
-- **GAS 部署 URL**：由 GAS 專案「部署」取得；`placeOrder.html` 內 `GAS_URL` 需與實際一致。
-- **試算表、Ragic、API Key**：在 GAS 專案屬性（PropertiesService）與 `Config.js` 常數中設定。
-- **botId ↔ OA 名稱**：GAS **指令碼屬性**，key 為 `OA_CONFIG_JSON`，value 為 JSON 字串，格式 `{ "botId": { "name": "OA名稱", "token": "..." }, ... }`。無 botId 且 PC 下單時由 Main.js 設為「PC下單」。
-- **Ragic 對照表**：試算表工作表 `Ragic 對照表`，**A 欄**=標準名稱，**B 欄**=Ragic 用名稱，**C 欄**=前端顯示用；doGet 回傳 C 欄，handleLiffOrder 入口用 `getRagicCToBMap()`（C→B）轉換後再往下流程。
-- **產品清單快取**：`Main.js` 常數 `PRODUCT_LIST_REFRESH_SECONDS`（秒）為過期間隔；Script Properties 的 `productList_C`、`productList_C_updatedAt` 由 doGet 自動讀寫。若清單過大導致 Properties 寫入失敗（單一 value 約 9KB 上限），doGet 仍會回傳本次試算表結果並記 log。
-- **Log_Mode**（指令碼屬性）：控制 DebugLog 寫入。`0`=不寫；`1`=僅營運等級（系統繁忙、發現待處理訂單、AI/處理異常）；`2` 或未設定=營運+除錯（含 doGet/doPost、botId、payload 等）。`logToSheet(msg, level)` 依此決定是否寫入。
-- **logcleanRules**：試算表工作表「logcleanRules」，欄位 A=訊息內容、B=比對方式(exact/startsWith)、C=僅在該小時(0-23 或留空)。`cleanDebugLogAndLeaveTrace` 依此清理 DebugLog；無表或為空時使用內建預設規則（見 `LineOrderForm/gas/README.md`）。
+### 現況（前端分離、後端共用）
+- **前端**：`placeOrder.html`（正式）vs `placeOrder-test.html`（測試），對應不同 LIFF ID（2008892626 vs 2008894056）。
+- **後端**：**共用同一 GAS 專案**（同一份 code、同一份試算表/快取）。
+- **限制**：改 GAS code 後 `clasp push` 會同時影響測試與正式；無法「測試版先測新功能、正式版維持舊版」。
+
+### 推薦方案：雙 GAS 專案 + 本地雙目錄
+若未來需要「後端 code 也先測試、再上正式」，建議：
+1. **新建測試 GAS 專案**（在 GAS 平台複製現有專案 → 改名「LineOrderForm - Test」，記下新 Script ID）。
+2. **本地目錄分為兩套**：
+   - `LineOrderForm/gas-test/`（.clasp.json → 測試 Script ID）
+   - `LineOrderForm/gas-prod/`（.clasp.json → 正式 Script ID）
+3. **開發流程**：
+   - 改 `gas-test/*.js` → `cd gas-test && clasp push`（推測試 GAS）→ 用 `placeOrder-test.html` 驗證
+   - 測試 OK → **手動複製**（或用 rsync/腳本）`gas-test/*.js` → `gas-prod/`（排除 `.clasp.json`）→ `cd gas-prod && clasp push`（推正式 GAS）
+   - Commit 兩個目錄到 Git：`git add gas-test/ gas-prod/ && git commit -m "Sync to prod: <功能>"`
+4. **Script Properties 分開設定**：測試 GAS 可指向測試試算表 / Ragic 測試表單，或共用正式試算表但用 botId / OA 名稱區分。
+
+**優點**：後端 code 完全隔離，測試環境可隨意改；正式環境只在驗證後才更新。  
+**複雜度**：中等（多一個 GAS 專案、多一組 Properties、本地兩個目錄需手動同步）。
 
 ---
 
-## 7. 前端行為摘要
+## 7. 重要設定與路徑（參考用）
+
+- **GAS 部署 URL**：由 GAS 專案「部署」取得；`placeOrder.html` 內 `GAS_URL` 需與實際一致。
+- **試算表、Ragic、API Key**：在 GAS 專案屬性（PropertiesService）與 `Config.js` 常數中設定。
+- **botId ↔ OA 名稱**：GAS **指令碼屬性**，key 為 `OA_CONFIG_JSON`，value 為 JSON 字串，格式 `{ "botId": { "name": "OA名稱", "token": "..." }, ... }`。PC 下單時由 Main.js 依 `isPc===true` 標記為「PC下單+OA名稱」。
+- **Ragic 對照表**：試算表工作表 `Ragic 對照表`，**A 欄**=標準名稱，**B 欄**=Ragic 用名稱，**C 欄**=前端顯示用；doGet 回傳 C 欄，handleLiffOrder 入口用 `getRagicCToBMap()`（C→B）轉換後再往下流程。
+- **產品清單快取**：`doGet` 使用 **Script Properties**（`productList_C` = JSON 字串、`productList_C_updatedAt` = Unix 秒數）儲存 C 欄清單。快取時間由**指令碼屬性**控制（單位：分鐘）：
+  - **`PRODUCT_LIST_REFRESH_SECONDS`**（正式環境，預設 360 分鐘 = 6 小時）
+  - **`PRODUCT_LIST_REFRESH_SECONDS_TEST`**（測試環境，預設 60 分鐘 = 1 小時）
+  - 設為 `0` 表示**停用快取**（每次都重讀試算表）
+  - `doGet` 依請求的 `botId` 參數判斷環境（`U7d234a2a4346dc8722c343c9cde29652` = 測試）
+  - 過期或停用時重讀試算表；未過期則直接回傳快取（約數十 ms，不開試算表）
+  - 單一 value 約 9KB 上限，超過會寫入失敗但仍回傳結果。**前端無快取**，每次頁面載入都打 `fetch(GAS_URL)` → doGet（但多半命中後端快取）。
+- **Log_Mode**（指令碼屬性）：控制 DebugLog 寫入。`0`=不寫；`1`=僅營運等級（系統繁忙、發現待處理訂單、AI/處理異常、Ragic 同步失敗）；`2` 或未設定=營運+除錯（含 doGet/doPost、botId、payload 等）。`logToSheet(msg, level)` 依此決定是否寫入。
+- **logcleanRules**：試算表工作表「logcleanRules」，欄位 A=訊息內容、B=比對方式(exact/startsWith)、C=僅在該小時(0-23 或留空)。`cleanDebugLogAndLeaveTrace` 依此清理 DebugLog；無表或為空時使用內建預設規則（移除「暫無資料須處理!」每小時、移除「[系統自動清理]：」於 6 點）。
+
+---
+
+## 8. 前端行為摘要
 
 - **liff-id.js**（根目錄）：`getLiffIdFromUrl(hostname, pathname, fallback)`。當 `hostname === "liff.line.me"` 時從 pathname 用正則 `/^\/([^/]+)(?:\/|$)/` 取 LIFF ID（支援 `/{liffId}/placeOrder.html` 與 `/{liffId}`）；非 liff.line.me 時回傳 fallback。**不 hardcode 單一 LIFF ID**，可同時支援多個 LIFF App（如 2008894056、2008892626）。有單元測試 `gas/__tests__/liff-id.test.js`。
 - **index.html**：先載入 `liff-id.js`，再 `getLiffIdFromUrl(hostname, pathname, fallback)` 取得 liffId 後 `liff.init`；已登入則轉 `placeOrder.html`（只帶 `?botId=xxx`）；init 失敗且為 OAuth callback 時仍嘗試轉訂單頁。
@@ -119,7 +149,7 @@
 
 ---
 
-## 8. 附錄：曾遇問題與注意
+## 9. 附錄：曾遇問題與注意
 
 | 狀況 | 說明／解法 |
 |------|------------|

@@ -44,25 +44,45 @@ function doPost(e) {
   }
 }
 
-/** 產品清單過期間隔（秒），超過此時間未更新則從試算表重讀。6 小時 = 21600，改這裡即可。 */
-var PRODUCT_LIST_REFRESH_SECONDS = 21600;
-
 /**
  * 抓取產品清單入口 (doGet)，使用 PropertiesService 儲存，過期後自動從試算表重讀
+ * 快取設定由指令碼屬性控制：
+ * - PRODUCT_LIST_REFRESH_SECONDS：正式環境快取時間（分鐘），預設 360 分鐘（6 小時）
+ * - PRODUCT_LIST_REFRESH_SECONDS_TEST：測試環境快取時間（分鐘），預設 60 分鐘（1 小時）
+ * - 設為 0 表示停用快取（每次都重讀試算表）
  */
 function doGet(e) {
   logToSheet("doGet", 2);
   try {
     const prop = PropertiesService.getScriptProperties();
+    
+    // 判斷是否為測試環境（從 URL 參數 botId 或請求來源判斷）
+    const urlBotId = e && e.parameter && e.parameter.botId ? e.parameter.botId : "";
+    const isTestEnv = urlBotId === "U7d234a2a4346dc8722c343c9cde29652"; // TEST_BOT_ID
+    
+    // 讀取快取設定（單位：分鐘），未設定時使用預設值
+    const refreshMinutes = isTestEnv
+      ? parseInt(prop.getProperty("PRODUCT_LIST_REFRESH_SECONDS_TEST") || "60", 10)
+      : parseInt(prop.getProperty("PRODUCT_LIST_REFRESH_SECONDS") || "360", 10);
+    
+    // 轉換為秒數，0 表示停用快取
+    const refreshSeconds = refreshMinutes * 60;
+    const cacheEnabled = refreshMinutes > 0;
+    
+    logToSheet(`doGet 快取設定：${isTestEnv ? '測試' : '正式'}環境，${refreshMinutes} 分鐘 (${cacheEnabled ? '啟用' : '停用'})`, 2);
+    
     const cached = prop.getProperty("productList_C");
     const updatedAtStr = prop.getProperty("productList_C_updatedAt");
     const nowSec = Math.floor(Date.now() / 1000);
     const updatedAt = updatedAtStr ? parseInt(updatedAtStr, 10) : 0;
-    const isStale = !cached || !updatedAt || (nowSec - updatedAt >= PRODUCT_LIST_REFRESH_SECONDS);
+    const isStale = !cacheEnabled || !cached || !updatedAt || (nowSec - updatedAt >= refreshSeconds);
 
     if (!isStale && cached) {
+      logToSheet("doGet 使用快取", 2);
       return ContentService.createTextOutput(cached).setMimeType(ContentService.MimeType.JSON);
     }
+    
+    logToSheet("doGet 重讀試算表", 2);
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = ss.getSheetByName('Ragic 對照表'); 
