@@ -150,8 +150,9 @@
 - **placeOrder.html** / **placeOrder-test.html**：先載入 `liff-id.js`，再以 `getLiffIdFromUrl` 取得 LIFF_ID 後 `liff.init`；以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`、`isPc`。產品清單在 onload 一開始即並行 `fetch(GAS_URL + '?botId=' + urlBotId)`，與 init/getProfile 同時進行；清單為含 `{ name, category }` 的結構化資料、送出後後端轉 B 欄。**下單日期**用當地日期（`getFullYear`/`getMonth`/`getDate`），不用 `toISOString`，避免 UTC 導致台灣等時區少一天。
   - **產品選擇 UI（測試與正式環境皆已啟用）**：
     - **分類過濾按鈕組**：提取產品的 `category` 欄位（去重）→ 生成多選按鈕組（`category-btn-selected` / `category-btn-unselected`），可點選多個分類。按鈕使用自訂 CSS class 搭配 `!important` 強制覆蓋 Bootstrap 的 `:active`/`:focus`/`:hover` 狀態，並在切換後呼叫 `btn.blur()` 移除焦點，修正手機瀏覽器（特別是 LINE 內建瀏覽器）點擊後顏色延遲更新的問題。
-    - **大版面產品選單 Modal**：點擊產品輸入框（readonly）→ 檢查是否已選分類 → 開啟全螢幕模態框（90% 螢幕寬度、80vh 高度）→ 顯示搜尋框（`product-search-input`）+ 產品清單（依已選分類過濾）→ 可即時搜尋（關鍵字 AND 分類）→ 點選產品後自動填入並關閉 Modal。
-    - **CSS 樣式**：`category-btn-selected`（藍底白字）、`category-btn-unselected`（白底藍邊）、`.product-modal`（模態框）、`.product-option`（產品選項大按鈕）。
+    - **大版面產品選單 Modal**：點擊產品輸入框（readonly）→ 檢查是否已選分類（未選時顯示自訂提示框，不用 `alert()`）→ 開啟全螢幕模態框（90% 螢幕寬度、80vh 高度）→ 顯示搜尋框（`product-search-input`）+ 產品清單（依已選分類過濾）→ 可即時搜尋（關鍵字 AND 分類）→ 點選產品後自動填入並關閉 Modal。
+    - **自訂提示框**：使用 `showCustomAlert(message)` 替代瀏覽器原生 `alert()`，避免顯示 domain name，外觀為白色圓角卡片 + 綠色確定按鈕，更美觀且符合 LINE 品牌風格。
+    - **CSS 樣式**：`category-btn-selected`（藍底白字）、`category-btn-unselected`（白底藍邊）、`.product-modal`（模態框）、`.product-option`（產品選項大按鈕）、`.custom-alert`（自訂提示框）。
     - **手機友善設計**：大按鈕（15px padding）、易於點擊、視覺回饋明確、無需鍵盤快捷鍵。
 - **placeOrder.html（正式）**：若 referrer 含 2008894056 則一進頁即導向 placeOrder-test。onload 一開始若 URL 有 `botId` 即寫入 sessionStorage（以目前頁為準）。`liff.init` 失敗時：僅在 **isTestContext** 時才導向測試頁；否則嘗試 **liff.login()**，不可用再顯示錯誤。
 - **placeOrder-test.html（測試）**：onload 一開始若 URL 有 `botId` 寫入 sessionStorage，**若無**（如 OAuth 回傳 `?code=...&state=...`）則寫入測試 botId `TEST_BOT_ID`（U7d234a2a4346dc8722c343c9cde29652）；送單時 `destination` fallback 為 `TEST_BOT_ID` 而非 `LIFF_DEFAULT`。確保從測試頁送單時後端收到測試 botId，Ragic 註解顯示「泉威官方Line測試」等測試用 OA 名稱；不影響手機 LINE 有帶 botId 的正常流程。
@@ -179,6 +180,8 @@
 | **測試環境送單 Ragic 顯示正式 OA 名稱** | OAuth 回傳 URL 無 botId，送單時若 sessionStorage 為先前正式頁留下的 botId 會帶錯。已改：兩頁 onload 一開始依 URL 寫入 botId；測試頁無 botId 時寫入/fallback 為測試 botId（TEST_BOT_ID），Ragic 註解即為 OA_CONFIG 中該 botId 的 name。 |
 
 || **手機分類按鈕顏色切換問題** | 手機瀏覽器（特別是 LINE 內建瀏覽器）點擊分類按鈕時，會出現「閃一下變淡，點其他地方才生效」的問題。原因是 Bootstrap 的 `:active` 和 `:focus` 偽類樣式覆蓋了 className 變更，導致視覺不同步。解決方式：(1) 使用自訂 CSS class（`category-btn-selected`/`category-btn-unselected`）搭配 `!important` 強制覆蓋所有狀態（`:active`、`:focus`、`:hover`）；(2) 切換後呼叫 `btn.blur()` 立即移除焦點狀態。 |
+|| **LIFF ID 格式錯誤（400 錯誤）** | LIFF ID 必須使用完整格式 `{appId}-{suffix}`（例如 `2008892626-gElGdN7S`），只寫 appId 部分（如 `2008892626`）會導致 LINE 平台回傳 400 錯誤「LIFF app not found」。正式環境：`2008892626-gElGdN7S`，測試環境：`2008894056-few4uzMm`。 |
+|| **操作說明書更新** | `manual.html` 已更新為新版操作流程，包含：分類過濾、大版面 Modal 選單、店家名稱自動記憶等功能。圖片檔名對應：步驟1=`a1.png`（基本資料）、步驟2=`a2.png`（分類按鈕）、步驟3=`a3.png`（點擊輸入框）+`a4.png`（Modal選單）。版本日期：2026-02-05。 |
 
 ---
 
