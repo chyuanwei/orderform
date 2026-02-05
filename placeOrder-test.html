@@ -67,10 +67,9 @@
             <div class="section-title">訂購項目<span class="req">*</span></div>
             <div class="mb-3">
                 <label class="form-label small text-muted">分類過濾（可複選）</label>
-                <select id="categoryFilter" class="form-select" multiple size="5">
-                    <option value="">載入中...</option>
-                </select>
-                <small class="text-muted">按住 Ctrl (Windows) 或 Cmd (Mac) 可複選</small>
+                <div id="categoryButtons" class="d-flex flex-wrap gap-2">
+                    <span class="text-muted small">載入中...</span>
+                </div>
             </div>
             <div id="itemList"></div>
             <button type="button" class="btn btn-outline-line w-100 mb-4" onclick="addItemRow()">+ 增加一筆品項</button>
@@ -260,19 +259,33 @@
         updateProductSelect(select, keyword);
     }
 
-    // 初始化分類過濾選單
+    // 初始化分類過濾按鈕
     function initCategoryFilter() {
-        var filterSelect = document.getElementById('categoryFilter');
-        filterSelect.innerHTML = allCategories.map(function(cat) {
-            return '<option value="' + cat + '">' + cat + '</option>';
+        var container = document.getElementById('categoryButtons');
+        container.innerHTML = allCategories.map(function(cat) {
+            return '<button type="button" class="btn btn-outline-primary btn-sm" data-category="' + cat + '" onclick="toggleCategory(\'' + cat + '\')">' + cat + '</button>';
         }).join('');
+    }
+    
+    // 切換分類選擇
+    function toggleCategory(category) {
+        var btn = document.querySelector('[data-category="' + category + '"]');
+        if (!btn) return;
         
-        // 監聽分類選擇變更
-        filterSelect.addEventListener('change', function() {
-            var selected = Array.from(filterSelect.selectedOptions).map(function(opt) { return opt.value; });
-            selectedCategories = selected;
-            updateAllProductSelects();
-        });
+        var idx = selectedCategories.indexOf(category);
+        if (idx === -1) {
+            // 未選中 → 選中
+            selectedCategories.push(category);
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-primary');
+        } else {
+            // 已選中 → 取消
+            selectedCategories.splice(idx, 1);
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-primary');
+        }
+        
+        updateAllProductSelects();
     }
 
     // 更新所有品項的下拉選單（依分類過濾）
