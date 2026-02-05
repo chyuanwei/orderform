@@ -37,7 +37,7 @@
   <p class="c27">操作圖文說明書</p>
   <p style="text-align: center; color: #666; font-size: 11pt;">
     適用對象：門市、加盟主、下單人員<br>
-    版本日期：2026-01-30
+    版本日期：2026-02-05
   </p>
   <hr>
 
@@ -46,8 +46,10 @@
 
   <span class="c26">2. 操作流程總覽</span>
   <ul class="c0">
-    <li>填寫基本資料與預計出貨日。</li>
-    <li>選擇產品並輸入數量。</li>
+    <li>填寫基本資料（首次使用需填店家名稱，之後自動帶入）。</li>
+    <li>選擇預計出貨日。</li>
+    <li>點選分類過濾產品（可複選多個分類）。</li>
+    <li>點擊產品欄位開啟大選單，搜尋並選擇產品與數量。</li>
     <li>核對訂單內容。</li>
     <li>送出訂單並確認成功畫面。</li>
   </ul>
@@ -60,41 +62,51 @@
       <td class="c17"><img src="images/image1.jpg" alt="步驟1"></td>
       <td class="c10">
         <ul class="c0">
-          <li>下單日期：系統自動生成。</li>
-          <li>店家名稱：請輸入您的店名。</li>
-          <li>出貨日期：選擇表定的出貨日。</li>
-          <li>訂購項目（必填）：至少新增 1 筆品項並輸入數量。</li>
-          <li>完成後點「下一步：核對內容」進入核對頁。</li>
+          <li><strong>下單日期</strong>：系統自動生成。</li>
+          <li><strong>店家名稱</strong>：
+            <ul style="margin-top: 5px;">
+              <li>首次使用：需手動輸入您的店名，系統會記住。</li>
+              <li>之後使用：自動帶入您的店名（已鎖定）。</li>
+              <li>如需修改：點擊「✏️ 編輯」按鈕可重新輸入。</li>
+            </ul>
+          </li>
+          <li><strong>訂購人 (LINE)</strong>：自動顯示您的 LINE 顯示名稱。</li>
+          <li><strong>出貨日期</strong>：選擇表定的出貨日。</li>
+          <li><strong>備註</strong>：選填，可輸入特殊需求。</li>
         </ul>
       </td>
     </tr>
   </table>
 
-  <div class="c14">步驟 2：選擇品項（下拉選單）</div>
+  <div class="c14">步驟 2：分類過濾（可複選）</div>
   <table>
     <tr>
       <td class="c28"><img src="images/image3.jpg" alt="步驟2"></td>
       <td class="c33">
         <ul class="c0">
-          <li>點選品項欄位會跳出下拉清單。</li>
-          <li>點選品項文字列即可選擇該品項。</li>
-          <li>右側圓點代表選取狀態，點選後即完成選擇。</li>
-          <li>支援快速上下滑動尋找產品。</li>
+          <li><strong>點選分類按鈕</strong>：頁面上方會顯示產品分類按鈕組。</li>
+          <li><strong>複選分類</strong>：可點選多個分類按鈕（已選擇：藍底白字）。</li>
+          <li><strong>取消分類</strong>：再次點擊已選擇的按鈕即可取消（變回白底藍邊）。</li>
+          <li><strong>必須先選分類</strong>：未選分類時無法開啟產品選單。</li>
+          <li>範例：同時選擇「飲料」和「食品」，產品選單會顯示這兩類產品。</li>
         </ul>
       </td>
     </tr>
   </table>
 
-  <div class="c14">步驟 3：新增多筆品項與數量</div>
+  <div class="c14">步驟 3：選擇產品（大版面選單 + 搜尋）</div>
   <table>
     <tr>
       <td class="c17"><img src="images/image2.jpg" alt="步驟3"></td>
       <td class="c10">
         <ul class="c0">
-          <li>於下拉選單選擇產品後，在數量欄位輸入需求數量。</li>
-          <li>如需多樣產品，點「+ 增加一筆品項」新增下一筆。</li>
-          <li>若某筆不需要，可點紅色 X 刪除該筆。</li>
-          <li>全部填寫完成後，點「下一步：核對內容」。</li>
+          <li><strong>點擊產品輸入框</strong>：會開啟全螢幕大選單（需先選分類）。</li>
+          <li><strong>搜尋產品</strong>：可在搜尋框輸入關鍵字快速過濾產品。</li>
+          <li><strong>點選產品</strong>：點擊大按鈕選擇產品，自動填入並關閉選單。</li>
+          <li><strong>輸入數量</strong>：在數量欄位輸入需求數量（預設為 1）。</li>
+          <li><strong>新增品項</strong>：點「+ 增加一筆品項」可新增更多產品。</li>
+          <li><strong>刪除品項</strong>：點紅色「✕」按鈕可刪除不需要的品項。</li>
+          <li>完成後點「下一步：核對內容」。</li>
         </ul>
       </td>
     </tr>
@@ -129,11 +141,33 @@
     </tr>
   </table>
 
-  <span class="c26">4. 注意事項</span>
+  <span class="c26">4. 注意事項與常見問題</span>
+  
+  <div class="c14">必填欄位</div>
   <ul class="c0">
     <li>標註（*）為必填，未填寫無法進入下一步。</li>
+    <li>至少需要選擇 1 個分類、1 筆產品、並輸入數量。</li>
+  </ul>
+  
+  <div class="c14">店家名稱自動記憶</div>
+  <ul class="c0">
+    <li><strong>首次使用</strong>：需手動輸入店名，系統會自動記住。</li>
+    <li><strong>之後使用</strong>：每次開啟都會自動帶入您的店名。</li>
+    <li><strong>如需修改</strong>：點擊「✏️ 編輯」按鈕即可重新輸入。</li>
+  </ul>
+  
+  <div class="c14">分類與產品選擇</div>
+  <ul class="c0">
+    <li>必須先選擇至少 1 個分類，才能開啟產品選單。</li>
+    <li>可同時選擇多個分類，產品選單會顯示所有已選分類的產品。</li>
+    <li>使用搜尋功能可快速找到產品（支援部分關鍵字）。</li>
+  </ul>
+  
+  <div class="c14">其他注意事項</div>
+  <ul class="c0">
     <li>送出後如有異動，請直接於 LINE 小幫手聯絡總部。</li>
     <li>若網路不穩導致圖片無法載入，請重新整理頁面。</li>
+    <li>建議在穩定的網路環境下操作，以確保訂單順利送出。</li>
   </ul>
 
   <span class="c26">5. 選單操作說明</span>
