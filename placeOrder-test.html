@@ -25,6 +25,33 @@
         }
         .env-badge { font-size: 0.75rem; color: #856404; background: #fff3cd; padding: 2px 8px; border-radius: 4px; }
         
+        /* 分類按鈕樣式（覆蓋 Bootstrap 的 :active 狀態，修正手機點擊問題） */
+        .category-btn-selected {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+            color: #fff !important;
+        }
+        .category-btn-unselected {
+            background-color: transparent !important;
+            border-color: #0d6efd !important;
+            color: #0d6efd !important;
+        }
+        /* 強制覆蓋所有狀態 */
+        .category-btn-selected:active,
+        .category-btn-selected:focus,
+        .category-btn-selected:hover {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+            color: #fff !important;
+        }
+        .category-btn-unselected:active,
+        .category-btn-unselected:focus,
+        .category-btn-unselected:hover {
+            background-color: transparent !important;
+            border-color: #0d6efd !important;
+            color: #0d6efd !important;
+        }
+        
         /* 產品選擇模態框樣式 */
         .product-modal { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
@@ -312,7 +339,7 @@
         allCategories.forEach(function(cat) {
             var btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'btn btn-outline-primary btn-sm';
+            btn.className = 'btn btn-sm category-btn-unselected';
             btn.textContent = cat;
             btn.setAttribute('data-category', cat);
             btn.onclick = function() { toggleCategory(cat); };
@@ -334,20 +361,14 @@
         if (idx === -1) {
             // 未選中 → 選中
             selectedCategories.push(category);
-            btn.className = 'btn btn-primary btn-sm';
-            // 直接設定 inline style 確保手機瀏覽器正確顯示
-            btn.style.backgroundColor = '#0d6efd';
-            btn.style.borderColor = '#0d6efd';
-            btn.style.color = '#fff';
+            btn.className = 'btn btn-sm category-btn-selected';
+            btn.blur(); // 移除焦點，避免 :focus 狀態干擾
             console.log('設定為已選中');
         } else {
             // 已選中 → 取消
             selectedCategories.splice(idx, 1);
-            btn.className = 'btn btn-outline-primary btn-sm';
-            // 清除 inline style，回到 class 控制
-            btn.style.backgroundColor = '';
-            btn.style.borderColor = '';
-            btn.style.color = '';
+            btn.className = 'btn btn-sm category-btn-unselected';
+            btn.blur(); // 移除焦點
             console.log('設定為未選中');
         }
         
