@@ -147,6 +147,7 @@
 - **placeOrder.html** / **placeOrder-test.html**：先載入 `liff-id.js`，再以 `getLiffIdFromUrl` 取得 LIFF_ID 後 `liff.init`；以 userAgent 偵測 PC（`isPc`），payload 帶 `destination`、`isPc`。產品清單在 onload 一開始即並行 `fetch(GAS_URL)`，與 init/getProfile 同時進行；清單為 C 欄、送出後後端轉 B 欄。**下單日期**用當地日期（`getFullYear`/`getMonth`/`getDate`），不用 `toISOString`，避免 UTC 導致台灣等時區少一天。
 - **placeOrder.html（正式）**：若 referrer 含 2008894056 則一進頁即導向 placeOrder-test。onload 一開始若 URL 有 `botId` 即寫入 sessionStorage（以目前頁為準）。`liff.init` 失敗時：僅在 **isTestContext** 時才導向測試頁；否則嘗試 **liff.login()**，不可用再顯示錯誤。
 - **placeOrder-test.html（測試）**：onload 一開始若 URL 有 `botId` 寫入 sessionStorage，**若無**（如 OAuth 回傳 `?code=...&state=...`）則寫入測試 botId `TEST_BOT_ID`（U7d234a2a4346dc8722c343c9cde29652）；送單時 `destination` fallback 為 `TEST_BOT_ID` 而非 `LIFF_DEFAULT`。確保從測試頁送單時後端收到測試 botId，Ragic 註解顯示「泉威官方Line測試」等測試用 OA 名稱；不影響手機 LINE 有帶 botId 的正常流程。
+  - **好友名單功能**（測試環境專用）：`liff.getProfile()` 後，用 `displayName` 呼叫 `doGet?action=getShopName&username=xxx` 查詢「好友名單」sheet（B 欄比對 username，取 C 欄店家名稱）。找到 → 自動帶入「店家名稱」欄位並設為 readonly，顯示「✏️ 編輯」按鈕可解鎖；找不到 → 欄位空白可填寫。送單時，後端 `handleLiffOrder` 用 `ordererName` 查「好友名單」B 欄，找不到則新增一筆（A=userId, B=username, C=shopName, D=shopName-username）。
 
 ---
 
