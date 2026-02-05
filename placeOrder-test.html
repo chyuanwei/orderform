@@ -203,12 +203,17 @@
             var data = await productListPromise;
             productOptions = Array.isArray(data) ? data : [];
             
+            console.log('產品資料筆數:', productOptions.length);
+            console.log('產品資料範例:', productOptions.slice(0, 3));
+            
             // 提取所有分類（去重）
             var categorySet = new Set();
             productOptions.forEach(function(item) {
                 if (item.category) categorySet.add(item.category);
             });
             allCategories = Array.from(categorySet);
+            
+            console.log('提取的分類:', allCategories);
             
             // 初始化分類過濾選單
             initCategoryFilter();
