@@ -343,6 +343,11 @@
             console.log('設定為未選中，className:', btn.className);
         }
         
+        // 強制重繪（手機瀏覽器修正）
+        btn.style.display = 'none';
+        btn.offsetHeight; // 觸發 reflow
+        btn.style.display = '';
+        
         console.log('當前已選分類：', selectedCategories);
         updateAllProductSelects();
     }
