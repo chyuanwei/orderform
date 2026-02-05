@@ -107,7 +107,7 @@ function handleLiffOrder(payload) {
 }
 
 /**
- * 更新好友名單：檢查 username 是否存在，不存在則新增
+ * 更新好友名單：檢查 username 是否存在，不存在則新增，存在則更新店家名稱
  */
 function updateFriendList(ss, username, userId, shopName) {
   try {
@@ -118,16 +118,28 @@ function updateFriendList(ss, username, userId, shopName) {
     }
 
     const data = friendSheet.getDataRange().getValues();
+    const combinedName = shopName && username ? `${shopName}-${username}` : "";
+    
     // 檢查 B 欄是否已有此 username
     for (let i = 1; i < data.length; i++) {
       if (data[i][1] && String(data[i][1]).trim() === username.trim()) {
-        logToSheet(`好友名單已存在 username: ${username}，不新增`, 2);
+        // 已存在：檢查店家名稱是否有變更
+        const oldShopName = data[i][2] ? String(data[i][2]).trim() : "";
+        const newShopName = shopName ? String(shopName).trim() : "";
+        
+        if (oldShopName !== newShopName) {
+          // 店家名稱有變更，更新 C 欄和 D 欄
+          friendSheet.getRange(i + 1, 3).setValue(shopName || "");  // C 欄
+          friendSheet.getRange(i + 1, 4).setValue(combinedName);    // D 欄
+          logToSheet(`好友名單已更新：username=${username}, 舊店家=${oldShopName}, 新店家=${newShopName}`, 1);
+        } else {
+          logToSheet(`好友名單已存在 username: ${username}，店家名稱相同，不更新`, 2);
+        }
         return;
       }
     }
 
     // 不存在，新增一筆資料
-    const combinedName = shopName && username ? `${shopName}-${username}` : "";
     friendSheet.appendRow([
       userId || "",           // A 欄：uid
       username || "",         // B 欄：username
