@@ -10,9 +10,10 @@ function handleLiffOrder(payload) {
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   
-  // 檢查並更新好友名單（僅測試環境 botId）
+  // 檢查並更新好友名單（測試環境與正式環境）
   const TEST_BOT_ID = "U7d234a2a4346dc8722c343c9cde29652";
-  if (payload.ordererName && botId === TEST_BOT_ID) {
+  const PROD_BOT_ID = "U1e2d1ee2a09bd678fb29b4c60fd156d7";
+  if (payload.ordererName && (botId === TEST_BOT_ID || botId === PROD_BOT_ID)) {
     updateShopNameInFriendList(ss, payload.ordererName, payload.userId, payload.shopName);
   }
   let itemsSummary;
