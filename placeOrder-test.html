@@ -323,19 +323,27 @@
     // 切換分類選擇
     function toggleCategory(category) {
         var btn = document.querySelector('[data-category="' + category.replace(/"/g, '\\"') + '"]');
-        if (!btn) return;
+        if (!btn) {
+            console.error('找不到按鈕：', category);
+            return;
+        }
         
         var idx = selectedCategories.indexOf(category);
+        console.log('切換分類：', category, '當前狀態：', idx === -1 ? '未選中' : '已選中');
+        
         if (idx === -1) {
             // 未選中 → 選中
             selectedCategories.push(category);
-            btn.className = 'btn btn-primary btn-sm';  // 完全替換 class
+            btn.className = 'btn btn-primary btn-sm';
+            console.log('設定為已選中，className:', btn.className);
         } else {
             // 已選中 → 取消
             selectedCategories.splice(idx, 1);
-            btn.className = 'btn btn-outline-primary btn-sm';  // 完全替換 class
+            btn.className = 'btn btn-outline-primary btn-sm';
+            console.log('設定為未選中，className:', btn.className);
         }
         
+        console.log('當前已選分類：', selectedCategories);
         updateAllProductSelects();
     }
 
