@@ -24,6 +24,37 @@
             background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
         }
         .env-badge { font-size: 0.75rem; color: #856404; background: #fff3cd; padding: 2px 8px; border-radius: 4px; }
+        
+        /* 產品選擇模態框樣式 */
+        .product-modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;
+        }
+        .product-modal-content {
+            background: white; width: 90%; max-width: 500px; max-height: 80vh; 
+            border-radius: 15px; overflow: hidden; display: flex; flex-direction: column;
+        }
+        .product-modal-header {
+            padding: 15px 20px; background: #06C755; color: white; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .product-modal-body {
+            padding: 15px; overflow-y: auto; flex: 1;
+        }
+        .product-search-input {
+            width: 100%; padding: 12px; border: 2px solid #e9ecef; 
+            border-radius: 8px; font-size: 16px; margin-bottom: 15px;
+        }
+        .product-option {
+            padding: 15px; border: 1px solid #e9ecef; border-radius: 8px; 
+            margin-bottom: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .product-option:hover { background: #f8f9fa; border-color: #06C755; }
+        .product-option:active { background: #e9ecef; }
+        .close-modal-btn {
+            background: none; border: none; color: white; font-size: 24px; 
+            cursor: pointer; padding: 0; width: 30px; height: 30px;
+        }
     </style>
 </head>
 <body>
@@ -31,6 +62,20 @@
 <div id="loadingOverlay">
     <div class="spinner-border text-success" role="status"></div>
     <p class="mt-2">系統處理中...</p>
+</div>
+
+<!-- 產品選擇模態框 -->
+<div id="productModal" class="product-modal">
+    <div class="product-modal-content">
+        <div class="product-modal-header">
+            <h5 style="margin: 0;">選擇產品</h5>
+            <button class="close-modal-btn" onclick="closeProductModal()">×</button>
+        </div>
+        <div class="product-modal-body">
+            <input type="text" id="modalSearchInput" class="product-search-input" placeholder="🔍 搜尋產品..." oninput="filterModalProducts()">
+            <div id="modalProductList"></div>
+        </div>
+    </div>
 </div>
 
 <div class="container order-container">
@@ -231,6 +276,8 @@
         }
     };
 
+    var currentEditingRowId = null; // 記錄當前正在編輯的列
+
     function addItemRow() {
         const container = document.getElementById('itemList');
         const rowId = 'row_' + Date.now() + Math.floor(Math.random() * 1000);
@@ -240,13 +287,11 @@
                     <div class="col-7">
                         <input type="text" 
                                class="form-control product-input" 
-                               list="productList_${rowId}" 
-                               placeholder="請輸入或選擇產品..."
+                               placeholder="點擊選擇產品..."
                                required 
+                               readonly
                                data-row-id="${rowId}"
-                               autocomplete="off">
-                        <datalist id="productList_${rowId}">
-                        </datalist>
+                               onclick="openProductModal('${rowId}')">
                     </div>
                     <div class="col-3">
                         <input type="number" class="form-control product-count" value="1" min="1" required>
@@ -257,9 +302,6 @@
                 </div>
             </div>`;
         container.insertAdjacentHTML('beforeend', rowHtml);
-        
-        // 初始化該列的產品選項
-        updateProductDatalist(rowId);
     }
 
     // 初始化分類過濾按鈕
@@ -297,33 +339,71 @@
         updateAllProductSelects();
     }
 
-    // 更新所有品項的 datalist（依分類過濾）
-    function updateAllProductSelects() {
-        var allRows = document.querySelectorAll('.item-row');
-        allRows.forEach(function(row) {
-            var rowId = row.id;
-            updateProductDatalist(rowId);
-        });
+    // 開啟產品選擇模態框
+    function openProductModal(rowId) {
+        if (selectedCategories.length === 0) {
+            alert('請先選擇分類');
+            return;
+        }
+        
+        currentEditingRowId = rowId;
+        var modal = document.getElementById('productModal');
+        var searchInput = document.getElementById('modalSearchInput');
+        
+        searchInput.value = '';
+        renderModalProducts('');
+        
+        modal.style.display = 'flex';
     }
-
-    // 更新單一產品的 datalist
-    function updateProductDatalist(rowId) {
-        var datalist = document.getElementById('productList_' + rowId);
-        if (!datalist) return;
+    
+    // 關閉產品選擇模態框
+    function closeProductModal() {
+        var modal = document.getElementById('productModal');
+        modal.style.display = 'none';
+        currentEditingRowId = null;
+    }
+    
+    // 渲染模態框中的產品清單
+    function renderModalProducts(searchKeyword) {
+        var container = document.getElementById('modalProductList');
+        var keyword = searchKeyword || '';
         
         var filtered = productOptions.filter(function(item) {
-            return selectedCategories.length === 0 || selectedCategories.includes(item.category);
+            var matchCategory = selectedCategories.includes(item.category);
+            var matchSearch = keyword === '' || item.name.toLowerCase().includes(keyword.toLowerCase());
+            return matchCategory && matchSearch;
         });
         
-        if (selectedCategories.length === 0) {
-            datalist.innerHTML = '<option value="">請先選擇分類</option>';
-        } else if (filtered.length === 0) {
-            datalist.innerHTML = '<option value="">查無符合的產品</option>';
+        if (filtered.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center">查無符合的產品</p>';
         } else {
-            datalist.innerHTML = filtered.map(function(p) {
-                return '<option value="' + p.name + '">';
+            container.innerHTML = filtered.map(function(p) {
+                return '<div class="product-option" onclick="selectProduct(\'' + p.name.replace(/'/g, "\\'") + '\')">' + p.name + '</div>';
             }).join('');
         }
+    }
+    
+    // 過濾模態框中的產品
+    function filterModalProducts() {
+        var keyword = document.getElementById('modalSearchInput').value;
+        renderModalProducts(keyword);
+    }
+    
+    // 選擇產品
+    function selectProduct(productName) {
+        if (!currentEditingRowId) return;
+        
+        var input = document.querySelector('#' + currentEditingRowId + ' .product-input');
+        if (input) {
+            input.value = productName;
+        }
+        
+        closeProductModal();
+    }
+    
+    // 更新所有品項（分類變更時）- 不需要做任何事，因為模態框會即時過濾
+    function updateAllProductSelects() {
+        // 保留此函式，以免其他地方有呼叫
     }
 
     function removeRow(id) {
