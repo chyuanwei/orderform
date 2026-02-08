@@ -154,6 +154,7 @@
     - **自訂提示框**：使用 `showCustomAlert(message)` 替代瀏覽器原生 `alert()`，避免顯示 domain name，外觀為白色圓角卡片 + 綠色確定按鈕，更美觀且符合 LINE 品牌風格。
     - **CSS 樣式**：`category-btn-selected`（藍底白字）、`category-btn-unselected`（白底藍邊）、`.product-modal`（模態框）、`.product-option`（產品選項大按鈕）、`.custom-alert`（自訂提示框）。
     - **手機友善設計**：大按鈕（15px padding）、易於點擊、視覺回饋明確、無需鍵盤快捷鍵。
+    - **產品選單必填檢查**（測試與正式皆已啟用）：submit 時對品項的產品名做 `trim()`，過濾掉名稱為空或僅空白的項目；若過濾後無任何有效品項 → `showCustomAlert('請至少選擇一項產品')` 並阻擋進入核對內容頁；若有有效品項則以過濾後的 items 送出（空列自動忽略，不報錯）。
 - **placeOrder.html（正式）**：若 referrer 含 2008894056 則一進頁即導向 placeOrder-test。onload 一開始若 URL 有 `botId` 即寫入 sessionStorage（以目前頁為準）。`liff.init` 失敗時：僅在 **isTestContext** 時才導向測試頁；否則嘗試 **liff.login()**，不可用再顯示錯誤。
 - **placeOrder-test.html（測試）**：onload 一開始若 URL 有 `botId` 寫入 sessionStorage，**若無**（如 OAuth 回傳 `?code=...&state=...`）則寫入測試 botId `TEST_BOT_ID`（U7d234a2a4346dc8722c343c9cde29652）；送單時 `destination` fallback 為 `TEST_BOT_ID` 而非 `LIFF_DEFAULT`。確保從測試頁送單時後端收到測試 botId，Ragic 註解顯示「泉威官方Line測試」等測試用 OA 名稱；不影響手機 LINE 有帶 botId 的正常流程。
   - **好友名單功能**（測試與正式環境皆已啟用）：`liff.getProfile()` 後，用 `displayName` 呼叫 `doGet?action=getShopName&username=xxx` 查詢「好友名單」sheet（B 欄比對 username，取 C 欄店家名稱）。找到 → 自動帶入「店家名稱」欄位並設為 readonly，顯示「✏️ 編輯」按鈕可解鎖（點擊後需 confirm 確認）；找不到 → 欄位初始為 readonly + placeholder "載入中..."，查無結果後移除 readonly、改 placeholder 為「請輸入店名」、顯示提示文字「第一次使用，請填寫您的店家名稱，之後會自動帶入」。送單時，後端 `handleLiffOrder` 判斷 `botId === TEST_BOT_ID || botId === PROD_BOT_ID` 時呼叫 `updateShopNameInFriendList()`，用 `ordererName` 查「好友名單」B 欄：
