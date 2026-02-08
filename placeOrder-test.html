@@ -553,13 +553,17 @@
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         try {
-            const items = [];
+            const rawItems = [];
             document.querySelectorAll('.item-row').forEach(row => {
-                items.push({
-                    name: row.querySelector('.product-input').value,
-                    count: row.querySelector('.product-count').value
-                });
+                const name = (row.querySelector('.product-input').value || '').trim();
+                const count = row.querySelector('.product-count').value;
+                rawItems.push({ name, count });
             });
+            const items = rawItems.filter(i => i.name !== '');
+            if (items.length === 0) {
+                showCustomAlert('請至少選擇一項產品');
+                return;
+            }
             const urlParams = new URLSearchParams(window.location.search);
             const botIdFromUrl = urlParams.get('botId') || (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("liffBotId") : null) || TEST_BOT_ID;
             const isPc = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
