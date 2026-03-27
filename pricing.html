@@ -1,1 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 泉威布丁豆花價格調整公告</title>
+  <style>
+    /* 移除網頁預設邊距 */
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #ffffff; /* 如果圖片是白底，建議用白色 */
+      display: flex;
+      justify-content: center; /* 水平居中 */
+      align-items: flex-start; /* 從頂部開始，方便長圖滾動 */
+    }
 
+    /* RWD 圖片核心樣式 */
+    .pricing-img {
+      max-width: 100%;  /* 寬度最大不超過螢幕 */
+      height: auto;     /* 高度依比例縮放 */
+      display: block;
+    }
+
+    /* 針對桌機版限制最大寬度，避免圖片拉得太寬而失真 */
+    @media (min-width: 1024px) {
+      .pricing-img {
+        max-width: 800px; 
+        margin: 20px auto;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* 電腦版加一點陰影比較美觀 */
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <img src="/pricing/價格調整公告.jpg" alt="2026價格調整公告" class="pricing-img">
+  <img src="/pricing/1.jpg" alt="2026報價1" class="pricing-img">
+  <img src="/pricing/2.jpg" alt="2026報價2" class="pricing-img">
+  <img src="/pricing/3.jpg" alt="2026報價3" class="pricing-img">
+
+
+</body>
+</html>
