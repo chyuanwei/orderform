@@ -5,42 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>2026 泉威布丁豆花價格調整公告</title>
   <style>
-    /* 移除網頁預設邊距 */
+    /* 基礎頁面設定 */
     body, html {
       margin: 0;
       padding: 0;
       width: 100%;
-      height: 100%;
-      background-color: #ffffff; /* 如果圖片是白底，建議用白色 */
+      background-color: #f8f9fa; /* 改用淺灰色背景，更能凸顯白色底的圖片 */
       display: flex;
-      justify-content: center; /* 水平居中 */
-      align-items: flex-start; /* 從頂部開始，方便長圖滾動 */
+      flex-direction: column;
+      align-items: center;
+      /* 頁面上下各留 40px 留白，增加閱讀舒適度 */
+      padding: 40px 0; 
     }
 
     /* RWD 圖片核心樣式 */
     .pricing-img {
-      max-width: 100%;  /* 寬度最大不超過螢幕 */
-      height: auto;     /* 高度依比例縮放 */
+      width: 92%;       /* 手機版左右留一點白邊，不會太壓迫 */
+      max-width: 800px; /* 桌機最大寬度 */
+      height: auto;
       display: block;
+      background-color: #ffffff;
+      /* 設定間距：每張圖下方留 24px */
+      margin-bottom: 24px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); /* 輕微陰影增加質感 */
+      border-radius: 4px; /* 若圖片有邊框感，微圓角會更精緻 */
     }
 
-    /* 針對桌機版限制最大寬度，避免圖片拉得太寬而失真 */
+    /* 第一張公告圖可以稍微再拉開一點距離，區隔標題與內容 */
+    .main-announcement {
+      margin-bottom: 40px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1); /* 首圖陰影加深，強化重點 */
+    }
+
+    /* 最後一張圖不需要下邊距 */
+    .pricing-img:last-child {
+      margin-bottom: 0;
+    }
+
     @media (min-width: 1024px) {
+      body {
+        padding: 60px 0;
+      }
       .pricing-img {
-        max-width: 800px; 
-        margin: 20px auto;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* 電腦版加一點陰影比較美觀 */
+        margin-bottom: 30px; /* 電腦版間距稍微加大 */
       }
     }
   </style>
 </head>
 <body>
 
-  <img src="images/pricing/價格調整公告.jpg" alt="2026價格調整公告" class="pricing-img"></img><br/>
-  <img src="images/pricing/1.jpg" alt="2026報價1" class="pricing-img"></img><br/>
-  <img src="images/pricing/2.jpg" alt="2026報價2" class="pricing-img"></img><br/>
-  <img src="images/pricing/3.jpg" alt="2026報價3" class="pricing-img"></img><br/>
-
+  <img src="images/pricing/價格調整公告.jpg" alt="2026價格調整公告" class="pricing-img main-announcement">
+  
+  <img src="images/pricing/1.jpg" alt="2026報價1" class="pricing-img">
+  <img src="images/pricing/2.jpg" alt="2026報價2" class="pricing-img">
+  <img src="images/pricing/3.jpg" alt="2026報價3" class="pricing-img">
 
 </body>
 </html>
