@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>產品 Q&A - 泉威布丁豆花</title>
+    <style>
+        :root {
+            --primary-color: #5d4037;
+            --bg-color: #f8f9fa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: "Microsoft JhengHei", sans-serif;
+            line-height: 1.6;
+        }
+
+        .header-bar {
+            background: #fff;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .back-link {
+            position: absolute;
+            left: 20px;
+            top: 25px;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* 摺疊選單樣式 */
+        .qa-item {
+            background: #fff;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .qa-question {
+            padding: 18px 25px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            transition: background 0.3s;
+            border-bottom: 1px solid #eee;
+        }
+
+        .qa-question:hover {
+            background: #fffdfb;
+        }
+
+        .qa-question h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #444;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .qa-question h3 span {
+            font-size: 0.85rem;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .qa-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: #fafafa;
+        }
+
+        .answer-content {
+            padding: 25px;
+            color: #555;
+            white-space: pre-line; /* 保留換行 */
+        }
+
+        /* 展開狀態圖示 */
+        .icon::before {
+            content: '+';
+            font-size: 1.5rem;
+            color: #ccc;
+        }
+
+        .active .icon::before {
+            content: '−';
+        }
+
+        .active .qa-answer {
+            max-height: 1000px; /* 夠大的高度 */
+        }
+
+        /* 重點文字強調 */
+        .highlight {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header-bar">
+    <a href="announcement.html" class="back-link">← 返回</a>
+    <div style="font-weight: bold; color: var(--primary-color);">泉威布丁豆花</div>
+</div>
+
+<div class="container">
+    <h1>產品 Q&A</h1>
+
+    <div class="qa-item">
+        <div class="qa-question" onclick="toggleQA(this)">
+            <h3><span>1. 芋頭布丁豆花</span>Q：產品裡面出現黑色小顆粒，這是正常的嗎？</h3>
+            <div class="icon"></div>
+        </div>
+        <div class="qa-answer">
+            <div class="answer-content">
+<span class="highlight">是正常現象，請安心食用。</span>
+
+我們的芋頭布丁豆花使用天然芋頭削皮、切塊、磨漿後熬煮製成，原料中另有添加天然香草條，因此產品中若出現些微黑色小顆粒，屬於天然原料的正常表現，並非異物。
+            </div>
+        </div>
+    </div>
+
+    <div class="qa-item">
+        <div class="qa-question" onclick="toggleQA(this)">
+            <h3><span>2. 雞蛋布丁豆花</span>Q：為什麼雞蛋布丁豆花的顏色有時會不太一樣？</h3>
+            <div class="icon"></div>
+        </div>
+        <div class="qa-answer">
+            <div class="answer-content">
+<span class="highlight">這是正常現象。</span>
+
+我們雞蛋布丁豆花的色澤，是使用天然胡蘿蔔素進行調色，並非使用人工色素，因此顏色容易受到氣候、溫度等因素影響，而產生些微差異。
+這樣的做法，對健康與品質而言是較好的方向，也是我們對用料品質的堅持。因為我們不使用人工色素或過多添加劑，所以產品外觀會與一般市售豆花有所不同。
+若您有發現顏色差異，也非常感謝您主動向公司回饋。我們這邊也會再特別留意同批次產品的狀況，並持續要求品質穩定。
+
+另外，也麻煩您協助留意產品的水位與結冰程度，以利我們進一步判斷與了解，造成困擾敬請見諒。
+            </div>
+        </div>
+    </div>
+
+    <div class="qa-item">
+        <div class="qa-question" onclick="toggleQA(this)">
+            <h3><span>3. 黑豆布丁豆花</span>Q：為什麼黑豆布丁豆花會呈現淺綠色，底部有時還會有藍綠色的水？</h3>
+            <div class="icon"></div>
+        </div>
+        <div class="qa-answer">
+            <div class="answer-content">
+<span class="highlight">這是正常現象，請安心食用。</span>
+
+我們的黑豆布丁豆花是使用青仁黑豆製作。此類豆子本身即含有天然的綠色、青藍色澱粉質，熬煮後會呈現抹茶般的淺綠色。
+此外，豆花底部有時也可能釋放出些微藍綠色的天然色素水，這同樣屬於天然原料的正常表現。
+
+本產品不添加人工色素與香料，請安心食用。
+            </div>
+        </div>
+    </div>
+
+    <div class="qa-item">
+        <div class="qa-question" onclick="toggleQA(this)">
+            <h3><span>4. 綠豆料水比例</span>Q：為什麼綠豆桶內看起來水位比較高？是否有比例不對的情況？</h3>
+            <div class="icon"></div>
+        </div>
+        <div class="qa-answer">
+            <div class="answer-content">
+<span class="highlight">本產品皆依標準比例製作，請放心。</span>
+<span class="highlight">標準製作比例</span>
+綠豆配料統一依照 1：6 的比例 製作，也就是 豆 1、水 6。
+
+此比例為公司統一執行的標準，目的是確保每一桶產品的出廠總重量符合標準，並維持綠豆搭配豆花或甜品時的最佳口感、飽足感與湯頭濃郁度。
+
+<span class="highlight">為什麼運送後看起來水比較多</span>
+若您現場測量發現水位較高，例如約 9 公分，通常是因為產品經過長途物流運送，在震動與顛簸過程中，原本較鬆散的綠豆會因重力作用向下堆疊、沉積得更緊密。
+
+當豆子之間的空隙變小後，上層的湯水就會看起來相對較高，這是濃稠配料在運送過程中常見的正常物理現象，並不代表比例異常。
+            </div>
+        </div>
+    </div>
+
+    <div class="qa-item">
+        <div class="qa-question" onclick="toggleQA(this)">
+            <h3><span>5. 綠豆凝膠體</span>Q：為什麼綠豆湯冷藏後，會出現像果凍一樣的凝膠狀？</h3>
+            <div class="icon"></div>
+        </div>
+        <div class="qa-answer">
+            <div class="answer-content">
+<span class="highlight">這是正常現象。</span>
+
+綠豆本身富含澱粉，於加熱煮熟過程中，澱粉顆粒會吸水膨脹，形成所謂的糊化作用。當綠豆湯冷卻，尤其放入冰箱冷藏後，澱粉分子會重新排列，因此可能形成如果凍般的凝膠體。
+這是綠豆天然澱粉特性所造成的正常表現，並非產品異常。
+            </div>
+        </div>
+    </div>
+
+    <div class="qa-item">
+        <div class="qa-question" onclick="toggleQA(this)">
+            <h3><span>6. 產品保固</span>Q：產品保固日期是怎麼計算的？為什麼不是看生產日期？</h3>
+            <div class="icon"></div>
+        </div>
+        <div class="qa-answer">
+            <div class="answer-content">
+我們產品皆以出貨當天的日期作為標示依據，保固也是依此日期計算。
+若改以生產日期標示，實際可使用的保固天數反而會縮短，對客戶較不划算。
+
+因此，採用出貨日期作為標示方式，能讓客戶獲得較完整的保固天數。
+            </div>
+        </div>
+    </div>
+
+    <div class="qa-item">
+        <div class="qa-question" onclick="toggleQA(this)">
+            <h3><span>7. 產品重量</span>Q：為什麼標示為 15 公斤？這是包含桶子的重量嗎？</h3>
+            <div class="icon"></div>
+        </div>
+        <div class="qa-answer">
+            <div class="answer-content">
+是的，標示的 <span class="highlight">15 公斤</span> 為桶子加內容物的總重量。
+不過在計價與帳務計算時，我們已經將桶子的重量扣除，實際定價僅計算桶內的內容物，不會把桶重算入產品售價。
+之所以採用總重標示，是為了方便客戶收貨驗貨。只要整桶放上磅秤後，總重達到 15 公斤，即可快速確認內容物重量充足。
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleQA(element) {
+        const item = element.parentElement;
+        item.classList.toggle('active');
+    }
+</script>
+
+</body>
+</html>
