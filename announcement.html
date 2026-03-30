@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>泉威布丁豆花 - 公告資訊中心</title>
+    <style>
+        :root {
+            --primary-color: #5d4037;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--primary-color);
+            letter-spacing: 2px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 768px) {
+            .grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .nav-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .card-img {
+            height: 180px;
+            background-color: #eee;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .card-body {
+            padding: 25px;
+            text-align: center;
+        }
+
+        .card-body h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.3rem;
+            color: var(--primary-color);
+        }
+
+        .card-body p {
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 8px 25px;
+            background: var(--primary-color);
+            color: #fff;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>泉威布丁豆花</h1>
+    <p>最新公告與資訊查詢</p>
+</header>
+
+<div class="container">
+    <div class="grid">
+        <a href="pricing.html" class="nav-card">
+            <div class="card-img" style="background-image: url('images/pricing/價格調整公告.jpg');"></div>
+            <div class="card-body">
+                <h2>價格調整公告</h2>
+                <p>2026 年度報價調整說明與各項產品最新價格表。</p>
+                <span class="btn">進入查看</span>
+            </div>
+        </a>
+
+        <a href="qa.html" class="nav-card">
+            <div class="card-img" style="background-image: url('images/qa_cover.jpg');"></div>
+            <div class="card-body">
+                <h2>產品 Q&A</h2>
+                <p>關於產品成分、外觀呈現與售後保固等常見問題解答。</p>
+                <span class="btn">進入查看</span>
+            </div>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>
