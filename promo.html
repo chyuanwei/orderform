@@ -1,1 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最新活動 - 泉威布丁豆花</title>
+    <style>
+        /* 基礎設定：延用主頁面色調 */
+        :root {
+            --primary-color: #5d4037;
+            --bg-color: #f8f9fa;
+        }
 
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            background-color: var(--bg-color);
+            font-family: "Microsoft JhengHei", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 頂部導覽列 - 確保與 QA 頁面一致 */
+        .header-bar {
+            background: #fff;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .back-link {
+            position: absolute;
+            left: 20px;
+            top: 22px;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .brand-name {
+            font-weight: bold;
+            color: var(--primary-color);
+            letter-spacing: 1px;
+        }
+
+        /* 內容容器 */
+        .content-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 0;
+        }
+
+        /* RWD 圖片核心樣式 */
+        .promo-img {
+            width: 92%;
+            max-width: 800px;
+            height: auto;
+            display: block;
+            background-color: #ffffff;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 4px;
+        }
+
+        /* 首圖強化 */
+        .main-announcement {
+            margin-bottom: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        /* 最後一張圖不需要下邊距 */
+        .promo-img:last-child {
+            margin-bottom: 0;
+        }
+
+        /* RWD 微調 */
+        @media (min-width: 1024px) {
+            .content-container {
+                padding: 60px 0;
+            }
+            .promo-img {
+                margin-bottom: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <a href="announcement.html" class="back-link">← 返回</a>
+        <div class="brand-name">泉威布丁豆花</div>
+    </div>
+
+    <div class="content-container">
+        <img src="images/promo/集點2.jpg" alt="集點活動" class="promo-img main-announcement">
+        
+        <img src="images/promo/集點1.jpg" alt="集點活動1" class="promo-img">
+       
+    </div>
+
+</body>
+</html>
